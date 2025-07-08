@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Compra Exitosa</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script>
+    function descargarTicket(tipo) {
+      window.location.href = `/cart/ticket/${tipo}`;
+    }
+
+    // Si quieres descarga automática al cargar, descomenta esta línea:
+    // window.onload = () => descargarTicket('pdf');
+  </script>
+</head>
+<body>
+  <h2>✅ ¡Gracias por tu compra!</h2>
+  <p><strong>Fecha:</strong> <%= ticket.fecha %></p>
+
+  <h4>🧾 Resumen del Ticket:</h4>
+  <ul>
+    <% if (ticket.cart && Array.isArray(ticket.cart)) { %>
+      <% ticket.cart.forEach(item => { %>
+        <li>
+          <%= item.product.name %> - $<%= item.product.price.toFixed(2) %> x <%= item.quantity %>
+          = $<%= (item.product.price * item.quantity).toFixed(2) %>
+        </li>
+      <% }) %>
+    <% } else { %>
+      <li>⚠️ No hay productos en el ticket</li>
+    <% } %>
+  </ul>
+
+  <p><strong>Subtotal:</strong> $<%= ticket.subtotal.toFixed(2) %></p>
+  <p><strong>Impuestos (16%):</strong> $<%= ticket.tax.toFixed(2) %></p>
+  <p><strong>Total:</strong> $<%= ticket.total.toFixed(2) %></p>
+
+  <hr>
+
+  <button onclick="descargarTicket('pdf')">📄 Descargar PDF</button>
+  <button onclick="descargarTicket('json')">📦 Descargar JSON</button>
+
+  <br><br>
+  <a href="/products"><button>🛒 Realizar otra compra</button></a>
+  <a href="/cart/logout"><button>🔒 Cerrar sesión</button></a>
+
+</body>
+</html>
