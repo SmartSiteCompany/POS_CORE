@@ -1,10 +1,10 @@
 
-EquipoCore
+🛠️EquipoCore
 
 POS_CORE
 POS BETA
 
-REQUERIMIENTOS PARA INSTALAR DATA-X-POS En UBUNTO 20.04 
+REQUERIMIENTOS PARA INSTALAR DATA-X-POS En UBUNTU 24.04 
 
 npm install dotenv init -y
 
@@ -24,7 +24,7 @@ npm install express-validator
 
 npm install pdfkit
 
-Requerimientos:
+🛠️Requerimientos:
 Instalación de Node 
 
 Ve al sitio oficial: https://nodejs.org/
@@ -65,7 +65,7 @@ sudo systemctl status mongod
 
 mongod --version
 
-Instalar Mongosh y Mongo Compas 
+🛠️ Instalar Mongosh y Mongo Compas 
 
 mongosh
 echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
@@ -80,7 +80,7 @@ sudo systemctl status mongod
 
 mongosh
 
----Compas---
+🛠️---Compas---
 wget https://downloads.mongodb.com/compass/mongodb-compass_1.35.0_amd64.deb
 
 sudo dpkg -i mongodb-compass_1.35.0_amd64.deb
