@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>🛒 Carrito de Compras</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="container mt-5">
+  <h1 class="mb-4">🛒 Carrito de Compras</h1>
+
+  <% if (cart.length === 0) { %>
+    <div class="alert alert-warning">El carrito está vacío</div>
+  <% } else { %>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Precio Aplicado</th>
+          <th>Cantidad</th>
+          <th>Subtotal</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% cart.forEach(item => { 
+            let precio = (item.product[appliedPriceType] && item.product[appliedPriceType] > 0)
+              ? item.product[appliedPriceType]
+              : item.product.pricePieza;
+            if (typeof precio !== 'number') precio = 0;
+            let subtotalItem = precio * item.quantity;
+        %>
+          <tr>
+            <td><%= item.product.name %></td>
+            <td>
+              $<%= precio.toFixed(2) %> (<%= appliedPriceType.replace('price', '') %>)
+            </td>
+            <td><%= item.quantity %></td>
+            <td>
+              $<%= subtotalItem.toFixed(2) %>
+            </td>
+            <td>
+              <form action="/cart/decrease/<%= item.product._id %>" method="POST" style="display:inline;">
+                <button class="btn btn-warning btn-sm">➖</button>
+              </form>
+              <form action="/cart/remove/<%= item.product._id %>" method="POST" style="display:inline;">
+                <button class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar producto del carrito?')">🗑️</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <div class="mb-3">
+      <p><strong>Subtotal:</strong> $<%= (subtotal || 0).toFixed(2) %></p>
+      <p><strong>Impuestos (16%):</strong> $<%= (tax || 0).toFixed(2) %></p>
+      <h4><strong>Total:</strong> $<%= (total || 0).toFixed(2) %></h4>
+    </div>
+
+    <!-- Formulario para seleccionar tipo de precio -->
+    <form action="/cart/set-price-type" method="POST" class="mb-3">
+      <label for="tipoPrecio" class="form-label">Selecciona el tipo de precio a aplicar para esta compra:</label>
+      <select name="tipoPrecio" id="tipoPrecio" class="form-select" required>
+        <option value="pricePieza" <%= appliedPriceType === 'pricePieza' ? 'selected' : '' %>>Precio por pieza</option>
+        <option value="priceMayoreo" <%= appliedPriceType === 'priceMayoreo' ? 'selected' : '' %>>Mayoreo</option>
+        <option value="pricePaquete" <%= appliedPriceType === 'pricePaquete' ? 'selected' : '' %>>Paquete</option>
+        <option value="price4" <%= appliedPriceType === 'price4' ? 'selected' : '' %>>Precio 4</option>
+        <option value="price5" <%= appliedPriceType === 'price5' ? 'selected' : '' %>>Precio 5</option>
+      </select>
+      <button type="submit" class="btn btn-primary mt-2">Aplicar y continuar</button>
+    </form>
+
+    <form action="/cart/checkout" method="POST">
+      <button class="btn btn-success">✅ Finalizar compra y emitir ticket</button>
+    </form>
+
+    <form action="/cart/clear" method="POST" class="mt-2">
+      <button class="btn btn-danger">🧹 Vaciar carrito</button>
+    </form>
+  <% } %>
+
+  <a href="/products" class="btn btn-secondary mt-3">⬅ Volver a productos</a>
+</body>
+</html>
