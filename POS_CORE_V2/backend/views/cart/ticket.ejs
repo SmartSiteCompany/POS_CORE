@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Compra Exitosa</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <h2>✅ ¡Gracias por tu compra!</h2>
+  <p><strong>Fecha:</strong> <%= ticket.fecha %></p>
+
+  <h4>🧾 Resumen del Ticket:</h4>
+  <ul>
+    <% ticket.cart.forEach(item => { %>
+      <li>
+        <%= item.name %> - $<%= item.priceAtSale.toFixed(2) %> x <%= item.quantity %> = $<%= (item.priceAtSale * item.quantity).toFixed(2) %>
+      </li>
+    <% }) %>
+  </ul>
+
+  <p><strong>Subtotal:</strong> $<%= ticket.subtotal.toFixed(2) %></p>
+  <p><strong>Impuestos (16%):</strong> $<%= ticket.tax.toFixed(2) %></p>
+  <p><strong>Total:</strong> $<%= ticket.total.toFixed(2) %></p>
+
+  <p><strong>Tipo de pago:</strong> <%= ticket.tipoPago %></p>
+  <p><strong>Tipo de precio aplicado:</strong> <%= ticket.tipoPrecioAplicado.replace('price', '') %></p>
+
+  <hr />
+  <a href="/products"><button>🛒 Realizar otra compra</button></a>
+  <a href="/auth/logout"><button>🔒 Cerrar sesión</button></a>
+</body>
+</html>

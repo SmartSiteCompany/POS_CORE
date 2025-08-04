@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>🛒 Autocobro - Selección de Productos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .producto-btn {
+      width: 100%;
+      height: 120px;
+      font-size: 1.2rem;
+      white-space: normal;
+    }
+  </style>
+</head>
+<body class="container mt-4">
+  <h2 class="mb-4 text-center">🛍️ Selecciona tus productos</h2>
+
+  <!-- 🔍 Formulario de búsqueda -->
+  <form method="GET" class="mb-4">
+    <div class="input-group">
+      <input type="text" name="q" class="form-control" placeholder="Buscar producto..." value="<%= search || '' %>">
+      <button class="btn btn-primary">🔍 Buscar</button>
+    </div>
+  </form>
+
+  <!-- 🧾 Listado de productos -->
+  <div class="row g-3">
+    <% productos.forEach(product => { %>
+      <div class="col-6 col-md-4 col-lg-3">
+        <form action="/self-checkout/cart/add" method="POST">
+          <input type="hidden" name="productId" value="<%= product._id %>">
+          <button class="btn btn-outline-dark producto-btn" type="submit">
+            <strong><%= product.name %></strong><br>
+            $<%= product.pricePieza.toFixed(2) %>
+          </button>
+        </form>
+      </div>
+    <% }) %>
+  </div>
+</body>
+</html>

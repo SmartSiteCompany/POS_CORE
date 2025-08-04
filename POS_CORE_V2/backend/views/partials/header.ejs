@@ -1,0 +1,41 @@
+<div class="d-flex justify-content-between align-items-center mb-4"> 
+  <h2>Punto de Venta</h2>
+
+  <div class="d-flex gap-2">
+    <% if (user && user.role === 'administrador') { %>
+      <a href="/users" class="btn btn-outline-dark">👥 Usuarios</a>
+      <a href="/config" class="btn btn-outline-info">⚙️ Configuración</a>
+    <% } %>
+  </div>
+
+  <% if (user) { %>
+    <div class="d-flex align-items-center gap-3">
+
+      <% if (user.image) { %>
+        <img src="/uploads/<%= user.image %>" alt="img" width="40" height="40" style="border-radius: 50%; object-fit: cover;">
+      <% } else { %>
+        <div style="width: 40px; height: 40px; background: #ccc; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <span>👤</span>
+        </div>
+      <% } %>
+
+      <span class="fw-bold"><%= user.name %> (<%= user.role %>)</span>
+
+     <% if (typeof currentUrl !== 'undefined') { %>
+  <% if (currentUrl.startsWith('/users') && !currentUrl.startsWith('/users/logout')) { %>
+    <a href="/products" class="btn btn-outline-secondary btn-sm">↩️ Volver al Inventario</a>
+  <% } else if (!currentUrl.startsWith('/config')) { %>
+    <a href="/users/logout" class="btn btn-outline-danger btn-sm">🚪 Cerrar sesión</a>
+  <% } %>
+<% } %>
+<% if (user && user.role === 'administrador') { %>
+  <a href="/dashboard" class="btn btn-outline-warning">📊 Dashboard</a>
+<% } %>
+
+
+
+
+    </div>
+  <% } %>
+</div>
+<hr>

@@ -1,0 +1,10 @@
+<div class="container mt-5 text-center">
+  <h1 class="display-4 text-danger">🚫 Acceso denegado</h1>
+  <p class="lead">No tienes permiso para acceder a esta página.</p>
+
+  <% if (user) { %>
+    <a href="/products" class="btn btn-outline-primary mt-3">↩️ Volver al Inventario</a>
+  <% } else { %>
+    <a href="/" class="btn btn-outline-secondary mt-3">🔐 Ir a Inicio de sesión</a>
+  <% } %>
+</div>

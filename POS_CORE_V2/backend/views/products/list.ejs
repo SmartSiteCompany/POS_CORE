@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Productos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .low-stock {
+      background-color: #fff3cd !important; /* amarillo claro */
+    }
+    .no-stock {
+      background-color: #f8d7da !important; /* rojo claro */
+    }
+    .table td, .table th {
+      vertical-align: middle;
+    }
+    .highlight strong {
+      background-color: yellow;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="container vintage mt-5">
+    <%- include('../partials/header') %>
+
+    <h1 class="mb-4">Inventario de Productos</h1>
+
+    <% if (successMessage) { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>¡Éxito!</strong> <%= successMessage %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+
+    <% if (errorMessage) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>¡Error!</strong> <%= errorMessage %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+
+    <!-- Filtros -->
+    <form method="GET" action="/products" class="row g-3 mb-4">
+      <div class="col-md-3">
+        <label class="form-label">Categoría</label>
+        <select name="category" class="form-select">
+          <option value="">Todas</option>
+          <% categories.forEach(cat => { %>
+            <option value="<%= cat %>" <%= currentCategory === cat ? 'selected' : '' %>><%= cat %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Stock mínimo</label>
+        <input type="number" name="minStock" class="form-control" placeholder="0" min="0" value="<%= minStock || '' %>">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Buscar por nombre</label>
+        <input type="text" name="search" class="form-control" placeholder="Nombre del producto..." value="<%= searchQuery || '' %>">
+      </div>
+
+      <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary me-2">🔍 Buscar</button>
+        <a href="/products" class="btn btn-outline-secondary">Limpiar</a>
+      </div>
+    </form>
+
+    <!-- Botones -->
+    <div class="mb-3 d-flex flex-wrap gap-2">
+      <% if (user && user.role === 'administrador') { %>
+        <a href="/products/new" class="btn btn-outline-dark">➕ Agregar producto</a>
+
+        <form action="/products/import" method="POST" enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
+          <input type="file" name="excelFile" accept=".xlsx" required class="form-control form-control-sm" style="max-width: 250px;">
+          <button type="submit" class="btn btn-secondary btn-sm">📥 Importar Excel</button>
+        </form>
+      <% } %>
+
+      <a href="/cart/view" class="btn btn-success">🛒 Ver carrito</a>
+      <a href="/cart/pendientes" class="btn btn-outline-warning">🕒 Tickets Pendientes</a>
+
+      <a href="/corte-caja" class="btn btn-primary">📊 Corte de Caja</a>
+      <a href="/corte-caja/pdf" class="btn btn-outline-danger">📄 Exportar PDF</a>
+
+      <% if (user && user.role === 'administrador') { %>
+        <a href="/products/export" class="btn btn-outline-success">📦 Exportar Productos Excel</a>
+      <% } %>
+
+      <a href="/corte-caja/excel" class="btn btn-outline-success">📊 Exportar Corte de Caja Excel</a>
+    </div>
+
+    <!-- Tabla -->
+    <table class="table table-bordered table-vintage">
+      <thead>
+        <tr>
+          <th>Imagen</th>
+          <th>Nombre</th>
+          <th>Categoría</th>
+          <th>Precio</th>
+          <th>Stock</th>
+          <% if (user && user.role === 'administrador') { %>
+            <th>Inv. Mín</th>
+            <th>Inv. Máx</th>
+          <% } %>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% products.forEach(p => {
+          let rowClass = '';
+          if (p.stock <= 0) {
+            rowClass = 'no-stock';
+          } else if (p.stock < p.stockMin) {
+            rowClass = 'low-stock';
+          }
+        %>
+        <tr class="<%= rowClass %>">
+          <!-- Imagen -->
+          <td class="text-center">
+            <% if (p.image) { %>
+              <img src="/uploads/<%= p.image %>" alt="img" width="50" height="50" style="object-fit: cover; border-radius: 5px;">
+            <% } else { %>
+              <span class="text-muted">Sin imagen</span>
+            <% } %>
+          </td>
+
+          <!-- Nombre y categoría -->
+          <td><%= p.name %></td>
+          <td><%= p.category %></td>
+
+          <!-- Precio -->
+          <td>$<%= p.pricePieza ? p.pricePieza.toFixed(2) : '0.00' %> (pieza)</td>
+
+          <!-- Stock con advertencia -->
+          <td>
+            <%= p.stock %>
+            <% if (p.stock <= 0) { %>
+              <span class="badge bg-danger ms-2"><i class="bi bi-x-circle-fill"></i> Agotado</span>
+            <% } else if (p.stock < p.stockMin) { %>
+              <span class="badge bg-warning text-dark ms-2"><i class="bi bi-exclamation-triangle-fill"></i> Bajo stock</span>
+            <% } %>
+          </td>
+
+          <!-- Inventario mínimo y máximo -->
+          <% if (user && user.role === 'administrador') { %>
+            <td><%= p.stockMin %></td>
+            <td><%= p.stockMax %></td>
+          <% } %>
+
+          <!-- Acciones -->
+          <td>
+            <% if (user && user.role === 'administrador') { %>
+              <a href="/products/edit/<%= p._id %>" class="btn btn-sm btn-warning">✏️ Editar</a>
+              <form action="/products/delete/<%= p._id %>" method="POST" style="display:inline;">
+                <button class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este producto?')">🗑️ Eliminar</button>
+              </form>
+            <% } %>
+
+            <% if (user && (user.role === 'administrador' || user.role === 'cajero')) { %>
+              <form action="/cart/add/<%= p._id %>" method="POST" style="display:inline-flex; gap: 0.5rem;">
+                <input type="number" name="quantity" value="1" min="1" max="<%= p.stock %>" style="width: 60px;" required>
+                <button type="submit" class="btn btn-sm btn-success">🛒 Agregar</button>
+              </form>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <% if (products.length === 0) { %>
+      <div class="alert alert-warning mt-3">No se encontraron productos con los filtros aplicados</div>
+    <% } %>
+
+    <!-- Paginación -->
+    <% if (totalPages > 1) { %>
+      <nav aria-label="Paginación">
+        <ul class="pagination">
+          <% for (let i = 1; i <= totalPages; i++) { %>
+            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+              <a class="page-link" href="?page=<%= i %>&category=<%= currentCategory %>&minStock=<%= minStock %>&search=<%= searchQuery %>"><%= i %></a>
+            </li>
+          <% } %>
+        </ul>
+      </nav>
+    <% } %>
+
+    <a href="/monto-inicial" class="btn btn-secondary mt-4">⬅ Volver a monto inicial</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

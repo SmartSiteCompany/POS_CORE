@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>🕒 Tickets Pendientes</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-5">
+  <h2 class="mb-4">🕒 Tickets Pendientes</h2>
+
+  <% if (tickets.length === 0) { %>
+    <div class="alert alert-info">No hay tickets pendientes.</div>
+  <% } else { %>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Total</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (locals.flash && flash.success) { %>
+            <div class="alert alert-success"><%= flash.success %></div>
+            <% } %>
+
+            <% if (locals.flash && flash.error) { %>
+            <div class="alert alert-danger"><%= flash.error %></div>
+            <% } %>
+
+        <% tickets.forEach(ticket => { %>
+          <tr>
+            <td><%= ticket.date.toLocaleString('es-MX') %></td>
+            <td>$<%= ticket.total.toFixed(2) %></td>
+            <td>
+                <form action="/cart/cargar-pendiente/<%= ticket._id %>" method="POST" style="display:inline-block;">
+                    <button class="btn btn-success btn-sm">📥 Cargar</button>
+                </form>
+
+                <form action="/cart/cancelar-pendiente/<%= ticket._id %>" method="POST" style="display:inline-block;" onsubmit="return confirm('¿Cancelar este ticket?')">
+                    <button class="btn btn-danger btn-sm">🗑️ Cancelar</button>
+                </form>
+                </td>
+
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+
+  <a href="/products" class="btn btn-secondary mt-3">⬅ Volver</a>
+</body>
+</html>

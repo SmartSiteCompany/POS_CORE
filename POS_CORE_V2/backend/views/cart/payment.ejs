@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Pago <%= method %></title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="container mt-5">
+
+  <h2>💳 Pago con <%= method.charAt(0).toUpperCase() + method.slice(1) %></h2>
+  <p><strong>Total a pagar:</strong> $<span id="totalMostrar"><%= total.toFixed(2) %></span></p>
+
+  <form action="/cart/checkout" method="POST" id="formPago">
+    <input type="hidden" name="tipoPago" value="<%= method %>">
+    <input type="hidden" id="total" value="<%= total.toFixed(2) %>">
+
+    <div class="mb-3">
+      <label for="monto" class="form-label">Monto entregado:</label>
+      <input type="number" step="0.01" name="monto" id="monto" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+      <strong>Cambio:</strong> $<span id="cambio">0.00</span><br>
+      <strong>Falta por pagar:</strong> $<span id="restante">0.00</span>
+    </div>
+
+    <button type="submit" class="btn btn-success" id="btnFinalizar" disabled>✅ Finalizar compra</button>
+    <a href="/cart/view" class="btn btn-secondary">⬅ Cancelar</a>
+  </form>
+
+  <script>
+    const input = document.getElementById("monto");
+    const total = parseFloat(document.getElementById("total").value);
+    const cambioEl = document.getElementById("cambio");
+    const restanteEl = document.getElementById("restante");
+    const btnFinalizar = document.getElementById("btnFinalizar");
+    const tipoPago = "<%= method %>";
+
+    input.addEventListener("input", () => {
+      let pagado = parseFloat(input.value) || 0;
+
+      if (tipoPago === 'tarjeta' && pagado > total) {
+        pagado = total;
+        input.value = total.toFixed(2);
+      }
+
+      const cambio = pagado > total ? (pagado - total) : 0;
+      const restante = total - pagado > 0 ? (total - pagado) : 0;
+
+      cambioEl.textContent = cambio.toFixed(2);
+      restanteEl.textContent = restante.toFixed(2);
+
+      btnFinalizar.disabled = restante > 0;
+    });
+  </script>
+
+</body>
+</html>
