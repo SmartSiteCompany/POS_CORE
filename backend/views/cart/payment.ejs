@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Pago <%= method %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background: linear-gradient(to right, #A47ED7, #3B2A66);
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .pago-card {
+      background-color: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 1rem;
+      padding: 2rem 2.5rem;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 0 20px rgba(0,0,0,.25);
+    }
+    h2 { margin-bottom: .5rem; color:#fff; }
+    .form-label { color:#f8f8f8; font-weight:600; }
+    .form-control { background: rgba(255,255,255,.9); border:none; border-radius:.5rem; }
+    .btn-success { background:#63d471; border:none; }
+    .btn-secondary { background:#7446b6; border:none; }
+    .info-box {
+      background-color: rgba(255, 255, 255, 0.15);
+      padding: 1rem;
+      border-radius: .75rem;
+      color: #ffffff;
+      margin-bottom: 1rem;
+    }
+    .info-box strong { display:block; margin-bottom:.25rem; }
+  </style>
+</head>
+<body>
+  <div class="pago-card">
+    <h2>💳 Pago con <%= method.charAt(0).toUpperCase() + method.slice(1) %></h2>
+    <p class="mb-3">
+      <strong>Total a pagar:</strong>
+      $<span id="totalMostrar"><%= (typeof total !== 'undefined' ? total.toFixed(2) : '0.00') %></span>
+    </p>
+
+    <form action="/cart/checkout" method="POST" id="formPago">
+      <input type="hidden" name="tipoPago" value="<%= method %>">
+      <input type="hidden" id="total" value="<%= (typeof total !== 'undefined' ? total.toFixed(2) : '0.00') %>">
+
+      <% if (method === 'efectivo') { %>
+        <!-- EFECTIVO: el cajero ingresa el monto recibido -->
+        <div class="mb-3">
+          <label for="monto" class="form-label">Monto entregado</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            name="monto"
+            id="monto"
+            class="form-control"
+            placeholder="0.00"
+            required
+            autofocus
+          >
+        </div>
+
+        <div class="info-box">
+          <strong>Cambio:</strong> $<span id="cambio">0.00</span>
+          <strong>Falta por pagar:</strong> $<span id="restante">0.00</span>
+        </div>
+
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-success" id="btnFinalizar" disabled>✅ Finalizar compra</button>
+          <a href="/cart/view" class="btn btn-secondary">⬅ Cancelar</a>
+        </div>
+      <% } else if (method === 'tarjeta' || method === 'transferencia') { %>
+        <!-- TARJETA / TRANSFERENCIA: monto exacto automático -->
+        <input type="hidden" name="monto" id="monto" value="<%= (typeof total !== 'undefined' ? total.toFixed(2) : '0.00') %>">
+
+        <div class="info-box">
+          <strong>Monto exacto:</strong> $<%= (typeof total !== 'undefined' ? total.toFixed(2) : '0.00') %>
+          <div class="small mt-1">Para <em><%= method %></em> se cobra automáticamente el total exacto.</div>
+        </div>
+
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-success" id="btnFinalizar">✅ Confirmar cobro</button>
+          <a href="/cart/view" class="btn btn-secondary">⬅ Cancelar</a>
+        </div>
+      <% } else { %>
+        <div class="info-box">Método no soportado en esta vista.</div>
+        <a href="/cart/view" class="btn btn-secondary">⬅ Volver</a>
+      <% } %>
+    </form>
+  </div>
+
+  <% if (method === 'efectivo') { %>
+  <script>
+    (function(){
+      const input = document.getElementById('monto');
+      const total = parseFloat(document.getElementById('total').value) || 0;
+      const cambioEl = document.getElementById('cambio');
+      const restanteEl = document.getElementById('restante');
+      const btnFinalizar = document.getElementById('btnFinalizar');
+
+      function recalc(){
+        let pagado = parseFloat(input.value) || 0;
+        const cambio = pagado > total ? (pagado - total) : 0;
+        const restante = total - pagado > 0 ? (total - pagado) : 0;
+
+        cambioEl.textContent = cambio.toFixed(2);
+        restanteEl.textContent = restante.toFixed(2);
+        btnFinalizar.disabled = restante > 0;
+      }
+      input.addEventListener('input', recalc);
+      recalc();
+    })();
+  </script>
+  <% } %>
+</body>
+</html>

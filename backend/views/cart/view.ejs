@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>🛒 Carrito de Compras</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    body {
+      background: linear-gradient(to right, #b985f0, #ddd4ea);
+      color: #333;
+      font-family: 'Segoe UI', sans-serif;
+      padding-top: 40px;
+      min-height: 100vh;
+    }
+    .container {
+      background: rgba(174, 136, 246, 0.85);
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 0 30px rgba(116, 70, 182, 0.25);
+    }
+    h1, h4 { color: #4f3b8c; }
+    .form-select, .form-control { background-color: #fff; color: #333; border: 1px solid #ccc; }
+    .form-select:focus, .form-control:focus {
+      border-color: #7446b6;
+      box-shadow: 0 0 0 0.2rem rgba(116, 70, 182, 0.25);
+    }
+    .btn { border-radius: 20px; }
+    .table { background-color: #fefbff; color: #333; }
+    .table th { background-color: #e5daf9; color: #4e2182; }
+    .table td { background-color: #faf6ff; }
+    .alert-warning { background-color: #fff3cd; color: #856404; }
+    .btn-warning { background-color: #fcbf49; color: #333; border: none; }
+    .btn-danger { background-color: #f25f5c; border: none; }
+    .btn-success { background-color: #06d6a0; border: none; }
+    .btn-secondary { background-color: #cfd6e1; color: #333; border: none; }
+    .btn-primary { background-color: #7446b6; border: none; }
+
+    /* Autocomplete / resultados */
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list {
+      position: absolute; z-index: 1000; left: 0; right: 0; top: 100%;
+      background: #fff; border: 1px solid #ddd; border-top: none;
+      border-bottom-left-radius: .75rem; border-bottom-right-radius: .75rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,.08);
+      max-height: 320px; overflow-y: auto;
+    }
+    .autocomplete-item {
+      display: grid; grid-template-columns: 1fr auto; gap: .5rem 1rem;
+      padding: .6rem .75rem; cursor: default; align-items: center;
+      border-bottom: 1px solid #f2f2f2;
+    }
+    .autocomplete-item:last-child { border-bottom: 0; }
+    .autocomplete-item:hover { background: #f7f3ff; }
+    .autocomplete-title { font-weight: 600; }
+    .autocomplete-meta { font-size: .85rem; color: #666; }
+    .qty-wrap { display: flex; gap: .5rem; align-items: center; }
+    .qty-wrap input { width: 80px; }
+
+    /* Botón bonito para Tickets pendientes */
+    .pending-link{
+      display:flex; align-items:center; gap:12px;
+      padding:.9rem 1rem; border-radius:.9rem; margin: .25rem 0 1rem 0;
+      background:linear-gradient(135deg,#f4f0ff 0%,#ece4ff 100%);
+      color:#3b2a66; border:1px solid rgba(116,70,182,.14);
+      transition:transform .15s ease, box-shadow .15s ease, background .2s ease;
+      text-decoration:none;
+    }
+    .pending-link:hover{
+      transform:translateY(-1px);
+      background:linear-gradient(135deg,#efe9ff,#e7dcff);
+      box-shadow:0 10px 22px rgba(116,70,182,.18);
+      color:#2f1f58; text-decoration:none;
+    }
+    .pending-link .icon{
+      width:40px; height:40px; border-radius:12px;
+      display:grid; place-items:center; flex:0 0 40px;
+      background:linear-gradient(135deg,#8363d0,#4e2182);
+      color:#fff; box-shadow:0 6px 14px rgba(116,70,182,.25);
+      font-size:1.1rem;
+    }
+    .pending-link .label{ display:flex; flex-direction:column; line-height:1.15; }
+    .pending-link .label small{ color:#6b5b95; font-weight:500; margin-top:.15rem; }
+    .pending-link .pending-badge{
+      background:#06d6a0; color:#fff; font-weight:700;
+      padding:.35rem .55rem; font-size:.75rem; margin-left:auto;
+      border-radius:999px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <% // ===== Defaults y flash ===== %>
+    <%
+      const CART    = (typeof cart !== 'undefined' && Array.isArray(cart)) ? cart : [];
+      const SUBT    = (typeof subtotal !== 'undefined') ? subtotal : 0;
+      const TAX     = (typeof tax !== 'undefined') ? tax : 0;
+      const TOTL    = (typeof total !== 'undefined') ? total : 0;
+      const CATS    = (typeof categories !== 'undefined' && Array.isArray(categories)) ? categories : [];
+      const CURCAT  = (typeof currentCategory !== 'undefined') ? currentCategory : '';
+      const MINSTK  = (typeof minStock !== 'undefined') ? minStock : '';
+      const SQUERY  = (typeof searchQuery !== 'undefined') ? searchQuery : '';
+      const PCOUNT  = (typeof pendientesCount !== 'undefined') ? pendientesCount : 0;
+    %>
+
+    <% if (typeof flash !== 'undefined' && flash) { %>
+      <% if (flash.success) { %>
+        <div class="alert alert-success"><%= flash.success %></div>
+      <% } %>
+      <% if (flash.error) { %>
+        <div class="alert alert-danger"><%= flash.error %></div>
+      <% } %>
+    <% } %>
+
+    <h1 class="mb-2">🛒 Carrito</h1>
+
+    <!-- Botón "Tickets pendientes" -->
+    <a href="/cart/pendientes" class="pending-link">
+      <span class="icon"><i class="bi bi-clock-history"></i></span>
+      <span class="label">
+        <strong>Tickets pendientes</strong>
+        <small>Reanuda o cancela guardados</small>
+      </span>
+      <% if (PCOUNT > 0) { %>
+        <span class="pending-badge"><%= PCOUNT %></span>
+      <% } %>
+    </a>
+
+    <!-- Buscador con sugerencias (sin renderizar catálogo completo) -->
+    <form id="filtersForm" class="row g-3 mb-4" onsubmit="return false;">
+      <div class="col-md-3">
+        <label class="form-label">Categoría (opcional)</label>
+        <select name="category" id="catSelect" class="form-select">
+          <option value="">Todas</option>
+          <% CATS.forEach(cat => { %>
+            <option value="<%= cat %>" <%= CURCAT === cat ? 'selected' : '' %>><%= cat %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Stock mínimo</label>
+        <input type="number" id="minStockInput" class="form-control" placeholder="0" min="0" value="<%= MINSTK || '' %>">
+      </div>
+      <div class="col-md-7">
+        <label class="form-label">Buscar producto (nombre / código / descripción)</label>
+        <div class="autocomplete-wrap">
+          <input
+            type="text"
+            id="searchInput"
+            class="form-control"
+            placeholder="Escribe para buscar…"
+            value="<%= SQUERY || '' %>"
+            autocomplete="off"
+            data-tts="primary-search"
+            autofocus
+          >
+          <div id="autoList" class="autocomplete-list d-none"></div>
+        </div>
+        <div class="form-text">⚡ Escribe y usa los botones “Agregar” en los resultados. No se muestra el catálogo completo.</div>
+      </div>
+    </form>
+
+    <!-- Carrito -->
+    <% if (CART.length === 0) { %>
+      <div class="alert alert-warning">⚠️ El carrito está vacío</div>
+    <% } else { %>
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Precio aplicado</th>
+            <th>Cantidad</th>
+            <th>Subtotal</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% for (let i = 0; i < CART.length; i++) {
+               const item = CART[i];
+               const precio = (()=>{
+                 const candidates = ['pricePieza','priceMayoreo','pricePaquete','price4','price5'];
+                 for (const k of candidates) if (typeof item.product[k] === 'number' && item.product[k] > 0) return item.product[k];
+                 return Number(item.product.pricePieza || 0);
+               })();
+               const subtotalItem = Number(precio || 0) * Number(item.quantity || 0);
+          %>
+            <tr>
+              <td><%= item.product.name %></td>
+              <td>$<%= Number(precio || 0).toFixed(2) %></td>
+              <td><%= item.quantity %></td>
+              <td>$<%= Number(subtotalItem || 0).toFixed(2) %></td>
+              <td>
+                <form action="/cart/decrease/<%= item.product._id %>" method="POST" style="display:inline;">
+                  <button class="btn btn-warning btn-sm">➖</button>
+                </form>
+                <form action="/cart/remove/<%= item.product._id %>" method="POST" style="display:inline;">
+                  <button class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar producto del carrito?')">🗑️</button>
+                </form>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+
+      <div class="mb-3">
+        <p><strong>Subtotal:</strong> $<%= Number(SUBT || 0).toFixed(2) %></p>
+        <p><strong>Impuestos (16%):</strong> $<%= Number(TAX || 0).toFixed(2) %></p>
+        <h4><strong>Total:</strong> $<%= Number(TOTL || 0).toFixed(2) %></h4>
+      </div>
+
+      <!-- Tipo de pago -->
+      <form action="/cart/seleccionar-pago" method="POST" class="mb-3">
+        <label class="form-label">💳 Tipo de pago:</label>
+        <select name="tipoPago" class="form-select" required>
+          <option value="">-- Seleccione --</option>
+          <option value="efectivo">Efectivo</option>
+          <option value="tarjeta">Tarjeta</option>
+          <option value="transferencia">Transferencia</option>
+          <option value="mixto">Mixto</option>
+        </select>
+        <button type="submit" class="btn btn-success mt-2">✅ Realizar pago</button>
+      </form>
+
+      <div class="mb-3">
+        <form action="/cart/clear" method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-danger">🧹 Vaciar carrito</button>
+        </form>
+        <form action="/cart/guardar-pendiente" method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-warning">💾 Guardar pendiente</button>
+        </form>
+      </div>
+    <% } %>
+
+    <a href="/products" class="btn btn-secondary mt-3">⬅ Volver a productos</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Script global type-to-search (esta vista no incluye el header) -->
+  <script src="/js/type-to-search.js"></script>
+
+  <!-- Sugerencias con "Agregar" (usa /products/suggest) -->
+  <script>
+    (function() {
+      const input   = document.getElementById('searchInput');
+      const list    = document.getElementById('autoList');
+      const catSel  = document.getElementById('catSelect');
+      const minStk  = document.getElementById('minStockInput');
+
+      if (!input || !list) return;
+
+      let items = [];
+      let lastTerm = '';
+
+      const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+      function hideList(){ list.innerHTML=''; list.classList.add('d-none'); }
+      function showList(){ list.classList.remove('d-none'); }
+
+      function render(data){
+        items = Array.isArray(data) ? data : [];
+        if (!items.length) { hideList(); return; }
+
+        list.innerHTML = items.map((s, i) => `
+          <div class="autocomplete-item" data-idx="${i}">
+            <div>
+              <div class="autocomplete-title">${s.name}</div>
+              <div class="autocomplete-meta">Cód: ${s.barcode || '-'} • $${Number(s.price||0).toFixed(2)} • Stock: ${s.stock ?? 0} • Cat: ${s.category || '-'}</div>
+            </div>
+            <div class="qty-wrap">
+              <input type="number" class="form-control form-control-sm" min="1" max="${Number(s.stock||0)}" value="1" data-qty-for="${s.id}">
+              <button class="btn btn-sm btn-success" data-add="${s.id}">Agregar</button>
+            </div>
+          </div>
+        `).join('');
+        showList();
+      }
+
+      async function fetchSugs(){
+        const term = input.value.trim();
+        if (term.length < 2) { hideList(); return; }
+        const cat = (catSel && catSel.value) ? catSel.value : '';
+        const msk = (minStk && minStk.value) ? minStk.value : '';
+        const url = `/products/suggest?q=${encodeURIComponent(term)}&category=${encodeURIComponent(cat)}&minStock=${encodeURIComponent(msk)}&limit=10`;
+        try{
+          const res = await fetch(url, { credentials:'same-origin', headers:{ 'Accept':'application/json' }});
+          if (!res.ok) { hideList(); return; }
+          render(await res.json());
+        } catch(e){ console.error(e); hideList(); }
+      }
+
+      const onInput = debounce(()=>{
+        const term = input.value.trim();
+        if (term === lastTerm) return;
+        lastTerm = term;
+        fetchSugs();
+      }, 160);
+
+      input.addEventListener('input', onInput);
+      input.addEventListener('focus', ()=>{ if (input.value.trim().length >= 2) fetchSugs(); });
+      if (catSel) catSel.addEventListener('change', fetchSugs);
+      if (minStk) minStk.addEventListener('input', debounce(fetchSugs, 250));
+
+      // Click en "Agregar"
+      list.addEventListener('click', async (ev) => {
+        const btn = ev.target.closest('[data-add]');
+        if (!btn) return;
+        const id  = btn.getAttribute('data-add');
+        const qtyInput = list.querySelector(`input[data-qty-for="${id}"]`);
+        let qty = parseInt(qtyInput?.value || '1', 10);
+        if (isNaN(qty) || qty <= 0) qty = 1;
+
+        try {
+          const fd = new FormData();
+          fd.append('quantity', String(qty));
+          const res = await fetch(`/cart/add/${id}?ajax=1`, {
+            method: 'POST',
+            body: fd,
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+          });
+          const ok = res.ok ? await res.json() : null;
+          if (ok && ok.ok) {
+            location.reload(); // Mostrar carrito actualizado
+          } else {
+            alert((ok && ok.message) || 'No se pudo agregar.');
+          }
+        } catch(e) {
+          console.error(e);
+          alert('Error al agregar.');
+        }
+      });
+
+      document.addEventListener('click', (ev) => {
+        if (!list.contains(ev.target) && ev.target !== input) hideList();
+      });
+    })();
+  </script>
+</body>
+</html>

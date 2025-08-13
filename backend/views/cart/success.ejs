@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Compra Exitosa</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background: linear-gradient(to right, #6A4CC9, #3B2A66);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      color: #f1f1f1;
+    }
+
+    .ticket-container {
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(12px);
+      border-radius: 1rem;
+      padding: 2.5rem;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 0 25px rgba(0,0,0,0.4);
+    }
+
+    h2, h4, p, li {
+      color: #ffffff;
+    }
+
+    ul {
+      padding-left: 1.2rem;
+    }
+
+    .btn-custom {
+      border-radius: 20px;
+      border: 1px solid #ffffff44;
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .btn-custom:hover {
+      background: #ffffff22;
+      color: #fff;
+      transform: scale(1.02);
+    }
+
+    hr {
+      border-top: 1px solid rgba(255,255,255,0.3);
+    }
+  </style>
+  <script>
+    function descargarTicket(tipo) {
+      window.location.href = `/ticket/download?type=${tipo}`;
+    }
+
+    setTimeout(() => {
+      window.location.href = '/products';
+    }, 6000);
+  </script>
+</head>
+<body>
+
+  <div class="ticket-container text-center">
+    <h2 class="mb-4" style="color: #B9FBC0;">✅ ¡Gracias por tu compra!</h2>
+    <p><strong>🗓 Fecha:</strong> <%= ticket.fecha %></p>
+
+    <h4 class="mt-4">🧾 Detalle del Ticket:</h4>
+    <ul class="text-start">
+      <% if (ticket.cart && Array.isArray(ticket.cart)) { %>
+        <% ticket.cart.forEach(item => { %>
+          <li>
+            <%= item.name %> - $<%= item.priceAtSale.toFixed(2) %> x <%= item.quantity %>
+            = $<%= (item.priceAtSale * item.quantity).toFixed(2) %>
+          </li>
+        <% }) %>
+      <% } else { %>
+        <li>⚠️ No hay productos en el ticket</li>
+      <% } %>
+    </ul>
+
+    <p><strong>Subtotal:</strong> $<%= ticket.subtotal.toFixed(2) %></p>
+    <p><strong>Impuestos (16%):</strong> $<%= ticket.tax.toFixed(2) %></p>
+    <h4 style="color: #FCE38A;"><strong>Total:</strong> $<%= ticket.total.toFixed(2) %></h4>
+
+    <hr>
+
+    <h4>💳 Métodos de Pago:</h4>
+    <ul class="text-start">
+      <% if (ticket.pagoEfectivo > 0) { %>
+        <li>Efectivo: $<%= ticket.pagoEfectivo.toFixed(2) %></li>
+      <% } %>
+      <% if (ticket.pagoTarjeta > 0) { %>
+        <li>Tarjeta: $<%= ticket.pagoTarjeta.toFixed(2) %></li>
+      <% } %>
+      <% if (ticket.pagoTransferencia > 0) { %>
+        <li>Transferencia: $<%= ticket.pagoTransferencia.toFixed(2) %></li>
+      <% } %>
+    </ul>
+
+    <p><strong>Total recibido:</strong> $
+      <%= (ticket.pagoEfectivo + ticket.pagoTarjeta + ticket.pagoTransferencia).toFixed(2) %>
+    </p>
+    <p><strong>💵 Cambio entregado:</strong> $<%= ticket.cambio.toFixed(2) %></p>
+
+    <hr>
+
+    <div class="d-grid gap-2">
+      <button onclick="descargarTicket('pdf')" class="btn btn-custom">📄 Descargar PDF</button>
+      <button onclick="descargarTicket('json')" class="btn btn-custom">📦 Descargar JSON</button>
+      <button onclick="window.location.href='/cart/reprint-ticket'" class="btn btn-custom">🔁 Reimprimir Ticket</button>
+    </div>
+  </div>
+
+</body>
+</html>

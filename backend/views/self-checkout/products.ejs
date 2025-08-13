@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>🛒 Autocobro - Selección de Productos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background: linear-gradient(to right, #e9e6f6, #f7f5fc);
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding-top: 40px;
+      color: #333;
+    }
+    h2 { color: #4f3b8c; margin-bottom: .75rem; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom: .75rem; gap:.5rem; flex-wrap:wrap; }
+    .cart-btn { position: relative; }
+    .cart-badge {
+      position: absolute; top: -8px; right: -8px;
+      min-width: 22px; height: 22px; border-radius: 999px;
+      background: #7446b6; color: #fff; font-size: 12px; line-height: 22px;
+      text-align: center; padding: 0 6px; font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0,0,0,.15);
+    }
+    .producto-card {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #e0d5f2; border-radius: 1rem;
+      padding: 1rem; height: 100%;
+      display: flex; flex-direction: column; justify-content: space-between;
+      box-shadow: 0 0 15px rgba(180, 160, 255, 0.25);
+      transition: transform 0.2s;
+    }
+    .producto-card:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(130, 90, 200, 0.4); }
+    .producto-img { max-height: 110px; object-fit: contain; margin-bottom: 10px; border-radius: 0.5rem; }
+    .producto-nombre { font-size: 1rem; font-weight: 600; text-align: center; min-height: 40px; color: #4e2182; }
+    .producto-precio { font-size: 1.1rem; text-align: center; color: #06d6a0; margin: 8px 0; }
+    .producto-stock { font-size: .9rem; text-align:center; color:#6c757d; margin-top:-4px; }
+    .producto-btn { width: 100%; border-radius: 2rem; font-weight: 500; background-color: #7446b6; border: none; color: white; transition: background-color 0.2s; }
+    .producto-btn:hover { background-color: #4e2182; }
+    .form-control, .btn { border-radius: 1rem; }
+    .btn-primary { background-color: #7446b6; border: none; }
+    .input-group input { border: 1px solid #ccc; }
+    .qty-input { max-width: 90px; text-align: center; }
+
+    /* Autocomplete lista */
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list {
+      position: absolute; z-index: 1000; left: 0; right: 0; top: 100%;
+      background: #fff; border: 1px solid #ddd; border-top: none;
+      border-bottom-left-radius: .75rem; border-bottom-right-radius: .75rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,.08);
+      max-height: 280px; overflow-y: auto;
+    }
+    .autocomplete-item {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .5rem .75rem; cursor: pointer;
+    }
+    .autocomplete-item:hover, .autocomplete-item.active { background: #f3efff; }
+    .autocomplete-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: .5rem; border: 1px solid #eee; }
+    .autocomplete-name { font-weight: 600; }
+    .autocomplete-meta { font-size: .85rem; color: #666; }
+
+    /* Dropdown categorías */
+    .dropdown-menu-cats { max-height: 340px; overflow-y: auto; width: 320px; }
+    .dropdown-menu-cats .form-control { border-radius:.5rem; }
+    .dropdown-item.active { background:#7446b6; }
+  </style>
+</head>
+<body class="container">
+
+  <% // Defaults seguros
+    const _categories = Array.isArray(categories) ? categories : [];
+    const _selectedCat = (typeof selectedCat === 'string' && selectedCat) ? selectedCat : 'all';
+    const _search = (typeof search === 'string') ? search : '';
+    const _cartCount = (typeof cartCount === 'number') ? cartCount : 0;
+    const _pagination = pagination || { page: 1, perPage: 12, totalItems: (productos || []).length, totalPages: 1 };
+    const _page = Number(_pagination.page || 1);
+    const _perPage = Number(_pagination.perPage || 12);
+    const _totalItems = Number(_pagination.totalItems || 0);
+    const _totalPages = Math.max(1, Number(_pagination.totalPages || 1));
+    const _startItem = _totalItems ? (_page - 1) * _perPage + 1 : 0;
+    const _endItem = Math.min(_totalItems, _page * _perPage);
+    const _qsCommon = `cat=${encodeURIComponent(_selectedCat)}&q=${encodeURIComponent(_search || '')}`;
+  %>
+
+  <div class="topbar">
+    <h2 class="m-0">🛍️ Selecciona tus productos</h2>
+
+    <div class="d-flex align-items-center gap-2">
+      <!-- Dropdown Categorías compacto -->
+      <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          Categorías: <span id="catLabel"><%= (_selectedCat === 'all') ? 'Todas' : _selectedCat %></span>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end p-2 dropdown-menu-cats">
+          <div class="mb-2">
+            <input id="catFilter" type="text" class="form-control form-control-sm" placeholder="Filtrar categorías...">
+          </div>
+          <a class="dropdown-item <%= (_selectedCat === 'all') ? 'active' : '' %>"
+             data-cat="all"
+             href="/self-checkout/products?<%= 'cat=all&q=' + encodeURIComponent(_search || '') %>">
+            Todas
+          </a>
+          <% _categories.forEach(cat => { %>
+            <a class="dropdown-item <%= (_selectedCat === cat) ? 'active' : '' %>"
+               data-cat="<%= cat %>"
+               href="/self-checkout/products?<%= 'cat=' + encodeURIComponent(cat) + '&q=' + encodeURIComponent(_search || '') %>">
+              <%= cat %>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+
+      <a href="/self-checkout/cart" class="btn btn-outline-secondary cart-btn">
+        <span>🛒 Carrito</span>
+        <span id="cartCount" class="cart-badge"><%= _cartCount %></span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 🔍 Búsqueda + Autocomplete + Limpiar -->
+  <form method="GET" class="mb-3">
+    <input type="hidden" name="cat" value="<%= _selectedCat %>">
+    <input type="hidden" name="page" id="pageInput" value="<%= _page %>">
+    <div class="input-group autocomplete-wrap">
+      <input
+        type="text"
+        name="q"
+        class="form-control"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+        placeholder="Buscar por nombre o código..."
+        value="<%= _search %>"
+        id="searchInput"
+        autofocus
+      />
+      <button class="btn btn-primary" id="searchBtn">🔍 Buscar</button>
+      <button class="btn btn-outline-secondary" type="button" id="clearBtn">Limpiar</button>
+      <div id="autoList" class="autocomplete-list d-none"></div>
+    </div>
+  </form>
+
+  <!-- Info de resultados -->
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="text-muted">
+      <% if (_totalItems > 0) { %>
+        Mostrando <strong><%= _startItem %>–<%= _endItem %></strong> de <strong><%= _totalItems %></strong>
+      <% } else { %>
+        Sin resultados
+      <% } %>
+    </div>
+    <% if (_totalPages > 1) { %>
+      <div class="text-muted">Página <strong><%= _page %></strong> de <strong><%= _totalPages %></strong></div>
+    <% } %>
+  </div>
+
+  <% if (!productos || productos.length === 0) { %>
+    <div class="alert alert-warning">No hay productos para esta categoría/búsqueda.</div>
+  <% } %>
+
+  <div class="row g-3">
+    <% (productos || []).forEach(product => { %>
+      <div class="col-6 col-md-4 col-lg-3">
+        <div class="producto-card">
+          <% if (product.image) { %>
+            <img src="/uploads/<%= product.image %>" class="img-fluid producto-img" alt="<%= product.name %>" />
+          <% } else { %>
+            <img src="https://via.placeholder.com/150?text=Sin+Imagen" class="img-fluid producto-img" alt="Sin imagen" />
+          <% } %>
+          <div class="producto-nombre"><%= product.name %></div>
+          <div class="producto-precio">$<%= Number(product.pricePieza || 0).toFixed(2) %></div>
+          <div class="producto-stock">Disponibles: <strong><%= Number(product.stock || 0) %></strong></div>
+
+          <form action="/self-checkout/cart/add" method="POST" class="mt-2 add-form">
+            <input type="hidden" name="productId" value="<%= product._id %>" />
+            <div class="d-flex align-items-center gap-2">
+              <input type="number" name="qty" class="form-control qty-input" min="1" max="<%= Number(product.stock || 0) %>" value="1" />
+              <button class="btn producto-btn flex-grow-1" type="submit">➕ Agregar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+
+  <!-- Paginación -->
+  <% if (_totalPages > 1) { %>
+    <nav aria-label="Paginación" class="mt-3">
+      <ul class="pagination justify-content-center">
+        <li class="page-item <%= (_page <= 1) ? 'disabled' : '' %>">
+          <a class="page-link" href="/self-checkout/products?<%= _qsCommon %>&page=<%= _page - 1 %>">«</a>
+        </li>
+        <% 
+          const maxButtons = 7;
+          let start = Math.max(1, _page - 3);
+          let end = Math.min(_totalPages, start + maxButtons - 1);
+          if (end - start + 1 < maxButtons) start = Math.max(1, end - maxButtons + 1);
+          for (let p = start; p <= end; p++) { 
+        %>
+          <li class="page-item <%= (p === _page) ? 'active' : '' %>">
+            <a class="page-link" href="/self-checkout/products?<%= _qsCommon %>&page=<%= p %>"><%= p %></a>
+          </li>
+        <% } %>
+        <li class="page-item <%= (_page >= _totalPages) ? 'disabled' : '' %>">
+          <a class="page-link" href="/self-checkout/products?<%= _qsCommon %>&page=<%= _page + 1 %>">»</a>
+        </li>
+      </ul>
+    </nav>
+  <% } %>
+
+  <!-- Bootstrap JS (dropdown) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // --- Forzar foco en el buscador al cargar (por si el navegador ignora autofocus) ---
+    window.addEventListener('load', () => {
+      const input = document.getElementById('searchInput');
+      if (input) {
+        try {
+          input.focus({ preventScroll: true });
+          const len = input.value.length;
+          input.setSelectionRange(len, len); // cursor al final
+        } catch (_) {}
+      }
+    });
+
+    // --- Al abrir el dropdown de categorías, enfocar el filtro de categorías ---
+    document.addEventListener('shown.bs.dropdown', (ev) => {
+      const menu = ev.target && ev.target.nextElementSibling;
+      if (!menu) return;
+      const f = menu.querySelector('#catFilter');
+      if (f) setTimeout(() => { try { f.focus({ preventScroll:true }); } catch(_){} }, 10);
+    });
+
+    // --- Filtrado en el dropdown de categorías ---
+    (function() {
+      const filter = document.getElementById('catFilter');
+      const menu = filter ? filter.closest('.dropdown-menu') : null;
+      if (!filter || !menu) return;
+      const items = Array.from(menu.querySelectorAll('.dropdown-item'));
+      filter.addEventListener('input', () => {
+        const term = filter.value.trim().toLowerCase();
+        items.forEach(a => {
+          const txt = (a.textContent || '').toLowerCase();
+          a.classList.toggle('d-none', term && !txt.includes(term));
+        });
+      });
+    })();
+
+    // --- Limpiar búsqueda ---
+    (function() {
+      const input = document.getElementById('searchInput');
+      const pageInput = document.getElementById('pageInput');
+      const clearBtn = document.getElementById('clearBtn');
+      const searchBtn = document.getElementById('searchBtn');
+      const form = input.closest('form');
+
+      // si teclea algo y luego busca → vuelve a página 1
+      input.addEventListener('input', () => { pageInput.value = 1; });
+
+      // botón buscar → asegura página 1
+      searchBtn.addEventListener('click', () => { pageInput.value = 1; });
+
+      // limpiar → borra texto y envía a página 1
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        pageInput.value = 1;
+        form.submit();
+      });
+    })();
+
+    // --- Autocomplete ---
+    (function() {
+      const SELECTED_CAT = "<%= _selectedCat %>";
+      const input = document.getElementById('searchInput');
+      const list = document.getElementById('autoList');
+      const form = input.closest('form');
+      const pageInput = document.getElementById('pageInput');
+
+      let items = [];
+      let active = -1;
+      let lastTerm = '';
+
+      const debounce = (fn, ms) => { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; };
+      function hideList(){ list.innerHTML=''; list.classList.add('d-none'); active=-1; }
+      function render(data){
+        items = data || [];
+        if (!items.length){ hideList(); return; }
+        list.innerHTML = items.map((s,i)=>`
+          <div class="autocomplete-item" data-idx="${i}">
+            ${s.image ? `<img src="/uploads/${s.image}" class="autocomplete-thumb" alt="">` : `<div class="autocomplete-thumb" style="background:#f5f5f5"></div>`}
+            <div>
+              <div class="autocomplete-name">${s.name}</div>
+              <div class="autocomplete-meta">Código: ${s.barcode || '-'} • $${Number(s.price || 0).toFixed(2)} • Stock: ${s.stock ?? 0}</div>
+            </div>
+          </div>`).join('');
+        list.classList.remove('d-none'); active=-1;
+      }
+      async function fetchSugs(term){
+        try{
+          const res = await fetch(`/self-checkout/suggest?q=${encodeURIComponent(term)}&cat=${encodeURIComponent(SELECTED_CAT)}&limit=8`, {
+            credentials:'same-origin', headers:{'Accept':'application/json'}
+          });
+          const data = await res.json(); render(data);
+        }catch(e){ console.error(e); hideList(); }
+      }
+      const onInput = debounce(()=>{
+        const term = input.value.trim();
+        if (term.length < 2){ hideList(); return; }
+        if (term === lastTerm) return;
+        lastTerm = term; fetchSugs(term);
+      },150);
+
+      input.addEventListener('input', onInput);
+      input.addEventListener('focus', ()=>{ if (input.value.trim().length>=2 && items.length) list.classList.remove('d-none'); });
+      list.addEventListener('click', (ev)=>{
+        const it = ev.target.closest('.autocomplete-item'); if (!it) return;
+        const s = items[parseInt(it.dataset.idx,10)]; if (!s) return;
+        input.value = s.name; hideList(); pageInput.value = 1; form.submit();
+      });
+      input.addEventListener('keydown', (ev)=>{
+        if (ev.key==='Escape'){ hideList(); return; }
+        if (!items.length) return;
+        if (ev.key==='ArrowDown'){ ev.preventDefault(); active=(active+1)%items.length; highlight(); }
+        else if (ev.key==='ArrowUp'){ ev.preventDefault(); active=(active-1+items.length)%items.length; highlight(); }
+        else if (ev.key==='Enter' && active>=0){ ev.preventDefault(); input.value=items[active].name; hideList(); pageInput.value = 1; form.submit(); }
+      });
+      function highlight(){
+        const els = list.querySelectorAll('.autocomplete-item');
+        els.forEach((el,i)=>{ el.classList.toggle('active', i===active); if(i===active){ el.scrollIntoView({block:'nearest'}); }});
+      }
+      document.addEventListener('click',(ev)=>{ if(!list.contains(ev.target) && ev.target!==input) hideList(); });
+    })();
+
+    // --- Agregar al carrito (AJAX) ---
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.add-form').forEach((form) => {
+        form.addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+          const btn = form.querySelector('button[type="submit"]');
+          const qtyInput = form.querySelector('input[name="qty"]');
+          const productId = form.querySelector('input[name="productId"]').value;
+
+          let qty = parseInt(qtyInput.value, 10);
+          const max = parseInt(qtyInput.getAttribute('max'), 10) || 999999;
+          if (isNaN(qty) || qty <= 0) qty = 1;
+          if (qty > max) qty = max;
+          qtyInput.value = qty;
+
+          try {
+            const res = await fetch('/self-checkout/cart/add?ajax=1', {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+              body: JSON.stringify({ productId, qty })
+            });
+
+            const ct = res.headers.get('content-type') || '';
+            let data = null;
+            if (ct.includes('application/json')) data = await res.json();
+
+            if (data && data.ok) {
+              const badge = document.getElementById('cartCount');
+              if (badge) badge.textContent = data.count || 0;
+
+              const prev = btn.textContent;
+              btn.textContent = `✓ Agregado${data.added && data.added > 1 ? ' x' + data.added : ''}`;
+              btn.disabled = true;
+              setTimeout(() => { btn.textContent = '➕ Agregar'; btn.disabled = false; }, 800);
+            } else {
+              const msg = (data && data.message) ? data.message : 'No se pudo agregar';
+              const prev = btn.textContent;
+              btn.textContent = msg;
+              btn.classList.add('btn-warning');
+              setTimeout(() => { btn.textContent = '➕ Agregar'; btn.classList.remove('btn-warning'); }, 1200);
+
+              try {
+                const r2 = await fetch('/self-checkout/cart/count', { credentials: 'same-origin' });
+                const d2 = await r2.json();
+                const badge = document.getElementById('cartCount');
+                if (badge) badge.textContent = d2.count || 0;
+              } catch (_) {}
+            }
+          } catch (e) { console.error(e); }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

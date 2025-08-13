@@ -1,0 +1,65 @@
+
+        POS CORE - CORTE DE CAJA
+----------------------------------------
+Fecha: 12/8/2025, 10:08:31 p.m.
+Usuario: Gabriela
+----------------------------------------
+Venta 68804c1b4528bbf95933c205 - $1044.00
+Venta 68804f5635e87fee70dd1233 - $69.60
+Venta 68805118a28679758bd2f688 - $2691.20
+Venta 6880517fa28679758bd2f6ab - $522.00
+Venta 6885bd12c4ba4e5ed3ee1528 - $69.60
+Venta 6885bd56313a8bf117b487f2 - $69.60
+Venta 6885bd7c313a8bf117b4880c - $69.60
+Venta 6885beaf313a8bf117b48823 - $69.60
+Venta 6885c103313a8bf117b48844 - $69.60
+Venta 6885c134313a8bf117b48853 - $2320.00
+Venta 6885c165313a8bf117b48865 - $98.60
+Venta 6885c463313a8bf117b488c5 - $69.60
+Venta 68868b3d3312f5e934fb5a0d - $2320.00
+Venta 68868f0466b22a0b6e85b740 - $69.60
+Venta 688690d466b22a0b6e85b756 - $522.00
+Venta 688692420bc5ba4e8ff76743 - $69.60
+Venta 688692900bc5ba4e8ff7677d - $69.60
+Venta 688692cc0bc5ba4e8ff7679f - $110.20
+Venta 688696e4dc39e18ab21f61e1 - $226.20
+Venta 68869713dc39e18ab21f61f8 - $98.60
+Venta 6886a3efd0e174b71786c83d - $69.60
+Venta 68898c241b4cc9e409687cb5 - $522.00
+Venta 6889ba13d5ede53ba237ceb7 - $69.60
+Venta 6889ba56d5ede53ba237cec8 - $69.60
+Venta 6889bb33d5ede53ba237cf01 - $145.00
+Venta 6889bb4ed5ede53ba237cf15 - $46.40
+Venta 688a2f43de8b3e8b1ae72fc5 - $626.40
+Venta 688a2f6ede8b3e8b1ae72fd5 - $2320.00
+Venta 688ea46341b0374305a8a6cf - $2320.00
+Venta 688ea6b141b0374305a8a6ea - $2320.00
+Venta 688ea776423a9e91fa0652fb - $69.60
+Venta 688eaa3d4246a42490721b79 - $116.00
+Venta 688eaa4d4246a42490721b88 - $63.80
+Venta 688eaa5a4246a42490721b97 - $98.60
+Venta 688eaaee4246a42490721bad - $69.60
+Venta 688eac924246a42490721bc8 - $69.60
+Venta 688eaf29a15734100d7352ee - $2320.00
+Venta 688eb974b319b32e5878a56f - $69.60
+Venta 688ec1cd28b8cdc4ccec1b15 - $2320.00
+Venta 688ec1dd28b8cdc4ccec1b25 - $63.80
+Venta 688ec32de2e8b96168488945 - $116.00
+Venta 6892d0f5f7a9d34032eb2b3d - $203.00
+Venta 6892d1d3f7a9d34032eb2ba6 - $162.40
+Venta 6892d1e8f7a9d34032eb2bb4 - $116.00
+Venta 6892d1f9f7a9d34032eb2bc2 - $98.60
+Venta 6892d216f7a9d34032eb2bd0 - $116.00
+Venta 6892d237f7a9d34032eb2bde - $2320.00
+----------------------------------------
+Monto Inicial: $0.00
+Total Ventas: $27550.00
+TOTAL CON MONTO INICIAL: $27550.00
+
+Métodos de Pago:
+EFECTIVO: $7029.60
+TARJETA: $8549.20
+TRANSFERENCIA: $4901.00
+MIXTO: $6652.60
+
+¡Gracias por su esfuerzo hoy!

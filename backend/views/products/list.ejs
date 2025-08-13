@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Productos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    body {
+      background: linear-gradient(to right, #a47ed7, #3b2a66);
+      font-family: 'Segoe UI', sans-serif;
+      color: #2d2d2d;
+      padding: 2rem 0;
+    }
+    h1 { color: #4e2182; font-weight: bold; margin-bottom: 2rem; }
+    .card-glass {
+      background: #cebaeb;
+      border-radius: 1rem;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.15);
+      padding: 2rem;
+    }
+    .btn { border-radius: 2rem; font-weight: 500; }
+    .table {
+      background: #f3ebff; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 4px 10px rgba(116, 70, 182, 0.1);
+    }
+    .table th {
+      background: linear-gradient(90deg, #7446b6, #8363d0);
+      color: white; font-weight: 600; text-align: center; border: none;
+    }
+    .table td {
+      background-color: #ede1ff; border: none; text-align: center; vertical-align: middle;
+    }
+    .table tbody tr:nth-child(even) td { background-color: #e6d6ff; }
+    .low-stock td { background-color: #fff3cd !important; }
+    .no-stock td { background-color: #f8d7da !important; }
+    .alert { border-radius: 1rem; font-weight: 500; }
+    .page-item .page-link { color: #7446b6; border-radius: 0.75rem; }
+    .page-item.active .page-link { background-color: #7446b6; border-color: #7446b6; color: white; }
+
+    /* ---- Autocomplete ---- */
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list {
+      position: absolute; z-index: 1000; left: 0; right: 0; top: 100%;
+      background: #fff; border: 1px solid #ddd; border-top: none;
+      border-bottom-left-radius: .75rem; border-bottom-right-radius: .75rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,.08);
+      max-height: 280px; overflow-y: auto;
+    }
+    .autocomplete-item {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .5rem .75rem; cursor: pointer;
+    }
+    .autocomplete-item:hover, .autocomplete-item.active { background: #f3efff; }
+    .autocomplete-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: .5rem; border: 1px solid #eee; }
+    .autocomplete-name { font-weight: 600; }
+    .autocomplete-meta { font-size: .85rem; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container card-glass">
+    <%- include('../partials/header') %>
+
+    <h1>Inventario de Productos</h1>
+
+    <% if (successMessage) { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>¡Éxito!</strong> <%= successMessage %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+
+    <% if (errorMessage) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>¡Error!</strong> <%= errorMessage %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+
+    <!-- Filtros -->
+    <% const categoriesSorted = (categories || []).slice().sort((a,b)=> String(a||'').localeCompare(String(b||''), 'es', {sensitivity:'base'})); %>
+    <form id="filtersForm" method="GET" action="/products" class="row g-3 mb-4">
+      <div class="col-md-3">
+        <label class="form-label">Categoría</label>
+        <select name="category" class="form-select">
+          <option value="">Todas</option>
+          <% categoriesSorted.forEach(cat => { %>
+            <option value="<%= cat %>" <%= currentCategory === cat ? 'selected' : '' %>><%= cat %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Stock mínimo</label>
+        <input type="number" name="minStock" class="form-control" placeholder="0" min="0" value="<%= minStock || '' %>">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Buscar por nombre</label>
+        <div class="autocomplete-wrap">
+          <input
+            type="text"
+            name="search"
+            id="searchInput"
+            class="form-control"
+            placeholder="Nombre / código / descripción..."
+            value="<%= searchQuery || '' %>"
+            autocomplete="off"
+            data-tts="primary-search"
+            autofocus
+          >
+          <div id="autoList" class="autocomplete-list d-none"></div>
+        </div>
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary me-2">🔍 Buscar</button>
+        <a href="/products" class="btn btn-outline-dark">Limpiar</a>
+      </div>
+    </form>
+
+    <!-- Menú de acciones colapsable -->
+    <div class="dropdown mb-4">
+      <button class="btn btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        📋 Acciones
+      </button>
+      <ul class="dropdown-menu p-3 bg-light shadow rounded-4">
+        <% if (user && user.role === 'administrador') { %>
+          <li><a class="dropdown-item" href="/products/new">➕ Agregar producto</a></li>
+          <li>
+            <form action="/products/import" method="POST" enctype="multipart/form-data" class="d-flex gap-2 px-2 py-1">
+              <input type="file" name="excelFile" accept=".xlsx" required class="form-control form-control-sm">
+              <button type="submit" class="btn btn-sm btn-secondary">📥 Importar</button>
+            </form>
+          </li>
+        <% } %>
+        <li><a class="dropdown-item" href="/cart/view">🛒 Ver carrito</a></li>
+        <li><a class="dropdown-item" href="/cart/pendientes">🕒 Tickets Pendientes</a></li>
+        <li><a class="dropdown-item" href="/corte-caja">📊 Corte de Caja</a></li>
+        <li><a class="dropdown-item" href="/corte-caja/pdf">📄 Exportar PDF</a></li>
+        <% if (user && user.role === 'administrador') { %>
+          <li><a class="dropdown-item" href="/products/export">📦 Exportar Productos Excel</a></li>
+        <% } %>
+        <li><a class="dropdown-item" href="/corte-caja/excel">📊 Exportar Corte Excel</a></li>
+      </ul>
+    </div>
+
+    <!-- Tabla de productos -->
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead>
+          <tr>
+            <th>Imagen</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <% if (user && user.role === 'administrador') { %>
+              <th>Inv. Mín</th>
+              <th>Inv. Máx</th>
+            <% } %>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% products.forEach(p => {
+            let rowClass = '';
+            if (p.stock <= 0) rowClass = 'no-stock';
+            else if (p.stock < p.stockMin) rowClass = 'low-stock';
+          %>
+          <tr class="<%= rowClass %>">
+            <td>
+              <% if (p.image) { %>
+                <img src="/uploads/<%= p.image %>" width="50" height="50" style="object-fit: cover; border-radius: 5px;">
+              <% } else { %>
+                <span class="text-muted">Sin imagen</span>
+              <% } %>
+            </td>
+            <td><%= p.name %></td>
+            <td><%= p.category %></td>
+            <td>$<%= p.pricePieza ? p.pricePieza.toFixed(2) : '0.00' %> (pieza)</td>
+            <td>
+              <%= p.stock %>
+              <% if (p.stock <= 0) { %>
+                <span class="badge bg-danger ms-2"><i class="bi bi-x-circle-fill"></i> Agotado</span>
+              <% } else if (p.stock < p.stockMin) { %>
+                <span class="badge bg-warning text-dark ms-2"><i class="bi bi-exclamation-triangle-fill"></i> Bajo stock</span>
+              <% } %>
+            </td>
+            <% if (user && user.role === 'administrador') { %>
+              <td><%= p.stockMin %></td>
+              <td><%= p.stockMax %></td>
+            <% } %>
+            <td>
+              <% if (user && user.role === 'administrador') { %>
+                <a href="/products/edit/<%= p._id %>" class="btn btn-sm btn-warning">✏️ Editar</a>
+                <form action="/products/delete/<%= p._id %>" method="POST" style="display:inline;">
+                  <button class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este producto?')">🗑️</button>
+                </form>
+              <% } %>
+              <% if (user && (user.role === 'administrador' || user.role === 'cajero')) { %>
+                <form action="/cart/add/<%= p._id %>" method="POST" class="add-form" style="display:inline-flex; gap: 0.5rem;">
+                  <input type="number" name="quantity" value="1" min="1" max="<%= p.stock %>" style="width: 60px;" required>
+                  <button type="submit" class="btn btn-sm btn-success">🛒</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if (products.length === 0) { %>
+      <div class="alert alert-warning mt-3">No se encontraron productos con los filtros aplicados</div>
+    <% } %>
+
+    <% if (totalPages > 1) { %>
+      <nav aria-label="Paginación">
+        <ul class="pagination">
+          <% for (let i = 1; i <= totalPages; i++) { %>
+            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+              <a class="page-link" href="?page=<%= i %>&category=<%= currentCategory %>&minStock=<%= minStock %>&search=<%= searchQuery %>"><%= i %></a>
+            </li>
+          <% } %>
+        </ul>
+      </nav>
+    <% } %>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Autocomplete para el buscador -->
+  <script>
+    (function(){
+      const SELECTED_CAT = "<%= currentCategory || '' %>";
+      const MIN_STOCK = "<%= minStock || '' %>";
+      const input = document.getElementById('searchInput');
+      const list = document.getElementById('autoList');
+      const form = document.getElementById('filtersForm');
+
+      if (!input || !list || !form) return;
+
+      let items = [];
+      let active = -1;
+      let lastTerm = '';
+
+      const debounce = (fn, ms) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
+
+      function hideList(){ list.innerHTML=''; list.classList.add('d-none'); active=-1; }
+      function showList(){ list.classList.remove('d-none'); }
+      function render(data){
+        items = data || [];
+        if (!items.length) { hideList(); return; }
+        list.innerHTML = items.map((s,i)=>`
+          <div class="autocomplete-item" data-idx="${i}">
+            ${s.image ? `<img src="/uploads/${s.image}" class="autocomplete-thumb" alt="">` : `<div class="autocomplete-thumb" style="background:#f5f5f5"></div>`}
+            <div>
+              <div class="autocomplete-name">${s.name}</div>
+              <div class="autocomplete-meta">Cód: ${s.barcode || '-'} • $${Number(s.price||0).toFixed(2)} • Stock: ${s.stock ?? 0}</div>
+            </div>
+          </div>`).join('');
+        showList(); active=-1;
+      }
+
+      async function fetchSugs(term){
+        try{
+          const url = `/products/suggest?q=${encodeURIComponent(term)}&category=${encodeURIComponent(SELECTED_CAT)}&minStock=${encodeURIComponent(MIN_STOCK)}&limit=8`;
+          const res = await fetch(url, { credentials:'same-origin', headers:{'Accept':'application/json'} });
+          if (!res.ok) return hideList();
+          const data = await res.json();
+          render(data);
+        }catch(e){ console.error(e); hideList(); }
+      }
+
+      const onInput = debounce(()=>{
+        const term = input.value.trim();
+        if (term.length < 2){ hideList(); return; }
+        if (term === lastTerm) return;
+        lastTerm = term; fetchSugs(term);
+      }, 180);
+
+      input.addEventListener('input', onInput);
+      input.addEventListener('focus', ()=>{ if (input.value.trim().length>=2 && items.length) showList(); });
+
+      list.addEventListener('click', (ev)=>{
+        const it = ev.target.closest('.autocomplete-item');
+        if (!it) return;
+        const s = items[parseInt(it.dataset.idx,10)];
+        if (!s) return;
+        input.value = s.name;
+        hideList();
+        form.submit(); // buscar al seleccionar
+      });
+
+      input.addEventListener('keydown', (ev)=>{
+        if (!items.length) return;
+        if (ev.key === 'Escape'){ hideList(); return; }
+        if (ev.key === 'ArrowDown'){ ev.preventDefault(); active=(active+1)%items.length; highlight(); }
+        else if (ev.key === 'ArrowUp'){ ev.preventDefault(); active=(active-1+items.length)%items.length; highlight(); }
+        else if (ev.key === 'Enter' && active>=0){
+          ev.preventDefault();
+          const s = items[active];
+          input.value = s.name;
+          hideList();
+          form.submit();
+        }
+      });
+
+      function highlight(){
+        const els = list.querySelectorAll('.autocomplete-item');
+        els.forEach((el,i)=>{ el.classList.toggle('active', i===active); if(i===active){ el.scrollIntoView({block:'nearest'}); }});
+      }
+
+      document.addEventListener('click', (ev)=>{ if (!list.contains(ev.target) && ev.target !== input) hideList(); });
+    })();
+  </script>
+
+  <!-- Interceptor de "Agregar al carrito" -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.add-form').forEach((form) => {
+        form.addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+
+          const btn = form.querySelector('button[type="submit"]');
+          const qtyInput = form.querySelector('input[name="quantity"]');
+
+          let qty = parseInt(qtyInput.value, 10);
+          const max = parseInt(qtyInput.getAttribute('max'), 10) || 999999;
+          if (isNaN(qty) || qty <= 0) qty = 1;
+          if (qty > max) qty = max;
+          qtyInput.value = qty;
+
+          const body = new URLSearchParams();
+          body.append('quantity', String(qty));
+
+          try {
+            const res = await fetch(form.action + '?ajax=1', {
+              method: 'POST',
+              body: body.toString(),
+              credentials: 'same-origin',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+              }
+            });
+
+            const ct = res.headers.get('content-type') || '';
+            let data = null;
+            if (ct.includes('application/json')) data = await res.json();
+
+            const prevText = btn.textContent;
+
+            if (data && data.ok === false) {
+              btn.textContent = data.message || 'Sin stock';
+              btn.classList.add('btn-warning');
+              setTimeout(() => { btn.textContent = prevText; btn.classList.remove('btn-warning'); }, 1200);
+            } else {
+              if (data && typeof data.count === 'number') {
+                const badge = document.getElementById('cartCount');
+                if (badge) badge.textContent = data.count;
+              } else {
+                try {
+                  const r2 = await fetch('/cart/count', { credentials: 'same-origin' });
+                  if (r2.ok) {
+                    const d2 = await r2.json();
+                    const badge = document.getElementById('cartCount');
+                    if (badge && typeof d2.count === 'number') badge.textContent = d2.count;
+                  }
+                } catch(_) {}
+              }
+              btn.textContent = `✓ Agregado${qty > 1 ? ' x' + qty : ''}`;
+              btn.disabled = true;
+              setTimeout(() => { btn.textContent = '🛒'; btn.disabled = false; }, 800);
+            }
+          } catch (e) {
+            console.error(e);
+            const prevText = btn.textContent;
+            btn.textContent = 'Error';
+            btn.classList.add('btn-danger');
+            setTimeout(() => { btn.textContent = prevText; btn.classList.remove('btn-danger'); }, 1200);
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

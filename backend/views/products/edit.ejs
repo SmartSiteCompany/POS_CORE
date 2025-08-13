@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar Producto</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --morado-oscuro: #3B2A66;
+      --morado-claro: #A47ED7;
+      --morado-medio: #6B2E84;
+    }
+
+    body {
+      background: linear-gradient(to right, var(--morado-claro), var(--morado-oscuro));
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .card-form {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 1rem;
+      padding: 3rem 2rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    h1 {
+      font-weight: bold;
+      color: var(--morado-oscuro);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    label {
+      font-weight: 600;
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 0.5rem;
+    }
+
+    .btn-primary {
+      background-color: var(--morado-medio);
+      border-color: var(--morado-medio);
+      font-weight: bold;
+    }
+
+    .btn-primary:hover {
+      background-color: #552065;
+      border-color: #552065;
+    }
+
+    .btn-secondary {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card-form">
+    <h1>✏️ Editar Producto</h1>
+
+    <form action="/products/edit/<%= product._id %>" method="POST" enctype="multipart/form-data">
+      <div class="row g-3">
+
+        <div class="col-md-6">
+          <label class="form-label">Nombre*</label>
+          <input type="text" name="name" class="form-control" required value="<%= product.name %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Precio por pieza*</label>
+          <input type="number" step="0.01" name="pricePieza" class="form-control" required value="<%= product.pricePieza %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Precio mayoreo</label>
+          <input type="number" step="0.01" name="priceMayoreo" class="form-control" value="<%= product.priceMayoreo %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Precio paquete</label>
+          <input type="number" step="0.01" name="pricePaquete" class="form-control" value="<%= product.pricePaquete %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Precio 4</label>
+          <input type="number" step="0.01" name="price4" class="form-control" value="<%= product.price4 %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Precio 5</label>
+          <input type="number" step="0.01" name="price5" class="form-control" value="<%= product.price5 %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Cant. mínima para mayoreo</label>
+          <input type="number" name="minMayoreo" class="form-control" value="<%= product.minMayoreo %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Cant. mínima para paquete</label>
+          <input type="number" name="minPaquete" class="form-control" value="<%= product.minPaquete %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Cant. mínima para precio 4</label>
+          <input type="number" name="min4" class="form-control" value="<%= product.min4 %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Cant. mínima para precio 5</label>
+          <input type="number" name="min5" class="form-control" value="<%= product.min5 %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Categoría*</label>
+          <input type="text" name="category" class="form-control" required value="<%= product.category %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Stock</label>
+          <input type="number" name="stock" class="form-control" value="<%= product.stock %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Inv. Mínimo</label>
+          <input type="number" name="stockMin" id="stockMin" class="form-control" value="<%= product.stockMin %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Inv. Máximo</label>
+          <input type="number" name="stockMax" id="stockMax" class="form-control" value="<%= product.stockMax %>">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Código de barras*</label>
+          <input type="text" name="barcode" class="form-control" required value="<%= product.barcode %>">
+        </div>
+           <div class="col-12">
+          <label class="form-label">Descripción</label>
+          <textarea name="description" class="form-control" rows="2"><%= product.description || '' %></textarea>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Imagen del producto</label>
+          <input type="file" name="image" accept="image/*" class="form-control">
+          <% if (product.image) { %>
+            <div class="mt-2">
+              <img src="/uploads/<%= product.image %>" alt="Imagen actual" width="120">
+            </div>
+          <% } %>
+        </div>
+
+      
+
+      </div>
+
+      <div class="mt-4 d-flex justify-content-between">
+        <a href="/products" class="btn btn-secondary">↩️ Cancelar</a>
+        <button type="submit" class="btn btn-primary">💾 Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    document.querySelector('form').addEventListener('submit', function (e) {
+      const min = parseInt(document.getElementById('stockMin').value, 10);
+      const max = parseInt(document.getElementById('stockMax').value, 10);
+      if (!isNaN(min) && !isNaN(max) && min >= max) {
+        e.preventDefault();
+        alert('⚠️ El inventario mínimo debe ser menor que el inventario máximo.');
+      }
+    });
+  </script>
+
+</body>
+</html>

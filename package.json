@@ -1,0 +1,45 @@
+{
+  "name": "pos_core-main-import",
+  "version": "1.0.0",
+  "description": "POS_CORE POS BETA",
+  "main": "index.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SmartSiteCompany/POS_CORE.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SmartSiteCompany/POS_CORE/issues"
+  },
+  "homepage": "https://github.com/SmartSiteCompany/POS_CORE#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "connect-mongo": "^5.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "express-session": "^1.18.2",
+    "express-validator": "^7.2.1",
+    "init": "^0.1.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.8.7",
+    "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
+    "node-thermal-printer": "^4.5.0",
+    "pdfkit": "^0.13.0",
+    "printer": "^0.4.0",
+    "qrcode": "^1.5.4",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

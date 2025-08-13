@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Panel de Administración</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    :root{
+      --m1:#4f3b8c; --m2:#8363d0; --m3:#7446b6; --m4:#4e2182; --m5:#450c6e;
+      --glass: rgba(255,255,255,.14);
+      --card: #ffffffee;
+    }
+    body{
+      background: linear-gradient(135deg, var(--m2), var(--m5));
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+      color:#fff; padding: 24px 16px; min-height: 100vh;
+    }
+    .wrap{ max-width: 1200px; margin: 0 auto; }
+    .glass{
+      background: var(--glass); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .toolbar{
+      padding: 18px; margin-bottom: 16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    }
+    .toolbar h2{ margin:0; font-weight: 800; letter-spacing:.2px; }
+    .badge-soft{
+      background: rgba(255,255,255,.25); border:1px solid rgba(255,255,255,.35);
+      padding: 6px 10px; border-radius: 999px; color:#fff; font-weight:600;
+    }
+    .search{ display:flex; gap:8px; align-items:center; width:100%; }
+    .search input{
+      border-radius: 999px; border: none; outline: none;
+      padding: .65rem 2.3rem .65rem 1rem; /* espacio para botón limpiar */
+      flex:1; min-width: 240px;
+    }
+    .search .btn{ border-radius: 999px; background: var(--m4); border: none; padding: .55rem 1rem; }
+
+    /* Autocomplete + limpiar */
+    .search-wrap{ position: relative; flex: 1; }
+    .clear-btn{
+      position:absolute; right:.55rem; top:50%; transform: translateY(-50%);
+      border:0; background:transparent; color:#6b5b95; font-weight:700; line-height:1;
+      width:28px; height:28px; border-radius:50%; cursor:pointer;
+    }
+    .clear-btn:hover{ background: rgba(255,255,255,.35); }
+    .autocomplete-list{
+      position:absolute; z-index:1050; left:0; right:0; top:calc(100% + 6px);
+      background:#fff; border:1px solid #eee; border-radius:.75rem;
+      box-shadow:0 10px 25px rgba(0,0,0,.15); overflow:hidden;
+      max-height:320px; overflow-y:auto;
+    }
+    .autocomplete-item{ display:flex; gap:.6rem; padding:.55rem .75rem; cursor:pointer; align-items:center; }
+    .autocomplete-item:hover, .autocomplete-item.active{ background:#f3f0ff; }
+    .autocomplete-thumb{ width:36px; height:36px; object-fit:cover; border-radius:.5rem; border:1px solid #eee; }
+    .autocomplete-name{ font-weight:700; color:#3b2a66; }
+    .autocomplete-meta{ font-size:.85rem; color:#666; }
+    .kpis{
+      display:grid; gap:10px; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+      margin: 8px 0 14px 0;
+    }
+    .kpi{
+      background: #ffffffd9; color:#2d2d2d; border-radius: 12px; padding: 12px 14px; border:1px solid rgba(0,0,0,.06);
+    }
+    .kpi .label{ font-size:.8rem; color:#666; margin-bottom:2px; }
+    .kpi .value{ font-size:1.3rem; font-weight:800; color: var(--m4); }
+
+    .section{ margin-top: 18px; }
+    .section h4{ margin: 0 0 10px 6px; font-weight: 800; letter-spacing:.2px; }
+
+    .grid{
+      display:grid; gap:14px; grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
+    }
+    .card-act{
+      background: var(--card); color:#2d2d2d; border-radius: 14px; padding: 16px;
+      text-decoration:none; display:flex; flex-direction:column; gap:8px;
+      border:1px solid rgba(0,0,0,.06); box-shadow: 0 6px 18px rgba(0,0,0,.08);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .card-act:hover{ transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.12); }
+    .card-act h5{ margin: 0; color: var(--m4); font-weight: 800; }
+    .card-act p{ margin: 0; color:#555; }
+    .icon{
+      width: 40px; height: 40px; border-radius: 10px; display:grid; place-items:center; font-size: 22px;
+      background: linear-gradient(135deg, #fff, #f6f2ff); color: var(--m4); border:1px solid #eee;
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,.05);
+    }
+    .import-box input{ border-radius: 10px; }
+    .import-box .btn{ border-radius: 10px; background: var(--m4); border:none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Pasamos showBack:false y pendingCount -->
+    <%- include('../partials/header', { user, showBack, pendingCount }) %>
+
+    <!-- Toolbar -->
+    <div class="glass toolbar">
+      <h2>⚙️ Panel de Administración</h2>
+      <span class="badge-soft">Monto inicial: $<%= Number(montoInicial||0).toFixed(2) %></span>
+
+      <!-- 🔎 Búsqueda con sugerencias + limpiar -->
+      <div class="search ms-auto" role="search">
+        <form id="adminSearchForm" class="d-flex w-100" action="/products" method="GET" autocomplete="off">
+          <div class="search-wrap">
+            <input
+              type="text"
+              name="search"
+              id="adminToolbarSearch"
+              placeholder="Buscar productos… (usa / para enfocar)"
+              aria-label="Buscar productos"
+              data-tts="primary-search"
+              autofocus
+            />
+            <button type="button" id="adminClearBtn" class="clear-btn" title="Limpiar">✖</button>
+            <div id="adminAutoList" class="autocomplete-list d-none"></div>
+          </div>
+          <button class="btn ms-2">Buscar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpis">
+      <div class="kpi">
+        <div class="label">Ventas (hoy)</div>
+        <div class="value">$<%= Number(resumen?.ventasHoy || 0).toFixed(2) %></div>
+      </div>
+      <div class="kpi">
+        <div class="label">Tickets (hoy)</div>
+        <div class="value"><%= Number(resumen?.ticketsHoy || 0) %></div>
+      </div>
+      <div class="kpi">
+        <div class="label">Efectivo (hoy)</div>
+        <div class="value">$<%= Number(resumen?.efectivoHoy || 0).toFixed(2) %></div>
+      </div>
+      <div class="kpi">
+        <div class="label">Usuario</div>
+        <div class="value"><%= (user && user.name) ? user.name : 'Admin' %></div>
+      </div>
+    </div>
+
+    <!-- Inventario -->
+    <div class="section">
+      <h4>📦 Inventario</h4>
+      <div class="grid">
+        <a class="card-act" href="/products" title="Ver productos">
+          <div class="icon">📦</div>
+          <h5>Inventario</h5>
+          <p>Ver, filtrar y gestionar productos.</p>
+        </a>
+
+        <a class="card-act" href="/products/new" title="Agregar producto">
+          <div class="icon">➕</div>
+          <h5>Agregar producto</h5>
+          <p>Crear un producto nuevo.</p>
+        </a>
+
+        <div class="card-act import-box" title="Importar Excel">
+          <div class="icon">📥</div>
+          <h5>Importar productos</h5>
+          <p>Carga un archivo Excel (.xlsx) con productos.</p>
+          <form action="/products/import" method="POST" enctype="multipart/form-data" class="mt-2">
+            <input type="file" name="excelFile" accept=".xlsx" class="form-control form-control-sm mb-2" required />
+            <button class="btn btn-sm">Subir</button>
+          </form>
+        </div>
+
+        <a class="card-act" href="/products/export" title="Exportar Excel">
+          <div class="icon">📤</div>
+          <h5>Exportar productos</h5>
+          <p>Descarga el inventario en Excel.</p>
+        </a>
+      </div>
+    </div>
+
+    <!-- Ventas y Corte -->
+    <div class="section">
+      <h4>🧾 Ventas y Corte</h4>
+      <div class="grid">
+        <a class="card-act" href="/corte-caja" title="Corte de caja">
+          <div class="icon">🧾</div>
+          <h5>Corte de Caja</h5>
+          <p>Ver ventas, filtros y totales.</p>
+        </a>
+
+        <a class="card-act" href="/corte-caja/pdf" title="Exportar PDF">
+          <div class="icon">📄</div>
+          <h5>Exportar PDF</h5>
+          <p>Reporte de corte en PDF.</p>
+        </a>
+
+        <a class="card-act" href="/corte-caja/excel" title="Exportar Excel">
+          <div class="icon">📊</div>
+          <h5>Exportar Excel</h5>
+          <p>Reporte de corte en Excel.</p>
+        </a>
+
+        <a class="card-act" href="/corte-caja/json" title="Exportar JSON">
+          <div class="icon">🧾</div>
+          <h5>Exportar JSON</h5>
+          <p>Descargar datos en JSON.</p>
+        </a>
+      </div>
+    </div>
+
+    <!-- Operación -->
+    <div class="section">
+      <h4>⚡ Operación</h4>
+      <div class="grid">
+        <a class="card-act" href="/ticket/download" title="Descargar ticket">
+          <div class="icon">🧷</div>
+          <h5>Descargar último ticket</h5>
+          <p>Obtén el ticket reciente.</p>
+        </a>
+
+        <a class="card-act" href="/cart/pendientes" title="Tickets pendientes">
+          <div class="icon">🕒</div>
+          <h5>Tickets pendientes</h5>
+          <p>Revisar cobros no finalizados.</p>
+        </a>
+
+        <a class="card-act" href="/monto-inicial" title="Ajustar monto inicial">
+          <div class="icon">💵</div>
+          <h5>Ajustar monto inicial</h5>
+          <p>Modificar el monto inicial del día.</p>
+        </a>
+      </div>
+    </div>
+
+    <!-- Analítica -->
+    <div class="section">
+      <h4>📈 Analítica</h4>
+      <div class="grid">
+        <a class="card-act" href="/dashboard" title="Dashboard">
+          <div class="icon">📈</div>
+          <h5>Dashboard</h5>
+          <p>Métricas y visualizaciones.</p>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Autocomplete en la barra del admin -->
+  <script>
+    (function(){
+      const input   = document.getElementById('adminToolbarSearch');
+      const list    = document.getElementById('adminAutoList');
+      const form    = document.getElementById('adminSearchForm');
+      const clearBt = document.getElementById('adminClearBtn');
+
+      if (!input || !list) return;
+
+      let items = [];
+      let active = -1;
+      let lastTerm = '';
+
+      const debounce = (fn, ms) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
+      const show = ()=> list.classList.remove('d-none');
+      const hide = ()=>{ list.innerHTML=''; list.classList.add('d-none'); active=-1; };
+      const highlight = ()=>{
+        const els = list.querySelectorAll('.autocomplete-item');
+        els.forEach((el,i)=>{ el.classList.toggle('active', i===active); if(i===active) el.scrollIntoView({block:'nearest'}); });
+      };
+
+      function render(data){
+        items = Array.isArray(data) ? data : [];
+        if (!items.length){ hide(); return; }
+        list.innerHTML = items.map((s,i)=>`
+          <div class="autocomplete-item" data-idx="${i}">
+            ${s.image ? `<img src="/uploads/${s.image}" class="autocomplete-thumb" alt="">` : `<div class="autocomplete-thumb" style="background:#f5f5f5"></div>`}
+            <div>
+              <div class="autocomplete-name">${s.name}</div>
+              <div class="autocomplete-meta">Cód: ${s.barcode || '-'} • $${Number(s.price||0).toFixed(2)} • Stock: ${s.stock ?? 0}</div>
+            </div>
+          </div>
+        `).join('');
+        show(); active=-1;
+      }
+
+      async function fetchSugs(term){
+        try{
+          // Usamos el endpoint genérico de sugerencias
+          const url = `/products/suggest?q=${encodeURIComponent(term)}&limit=8`;
+          const res = await fetch(url, { credentials:'same-origin', headers:{ 'Accept':'application/json' }});
+          if (!res.ok) return hide();
+          render(await res.json());
+        }catch(e){ console.error(e); hide(); }
+      }
+
+      const onInput = debounce(()=>{
+        const term = input.value.trim();
+        if (term.length < 2) { hide(); return; }
+        if (term === lastTerm) return;
+        lastTerm = term;
+        fetchSugs(term);
+      }, 160);
+
+      input.addEventListener('input', onInput);
+      input.addEventListener('focus', ()=>{ if (input.value.trim().length>=2 && items.length) show(); });
+
+      // Click en sugerencia → manda a /products con search seteado
+      list.addEventListener('click', (ev)=>{
+        const it = ev.target.closest('.autocomplete-item');
+        if (!it) return;
+        const s = items[parseInt(it.dataset.idx,10)];
+        if (!s) return;
+        input.value = s.name;
+        hide();
+        form.submit();
+      });
+
+      // Teclado: ↑/↓/Enter/Escape
+      input.addEventListener('keydown', (ev)=>{
+        if (ev.key === 'Escape') {
+          if (input.value) { input.value=''; hide(); }
+          else hide();
+          return;
+        }
+        if (!items.length) return;
+        if (ev.key === 'ArrowDown'){ ev.preventDefault(); active=(active+1)%items.length; highlight(); }
+        else if (ev.key === 'ArrowUp'){ ev.preventDefault(); active=(active-1+items.length)%items.length; highlight(); }
+        else if (ev.key === 'Enter' && active>=0){
+          ev.preventDefault();
+          const s = items[active]; if (!s) return;
+          input.value = s.name; hide(); form.submit();
+        }
+      });
+
+      // Botón limpiar
+      clearBt.addEventListener('click', ()=>{
+        input.value = '';
+        hide();
+        input.focus();
+      });
+
+      // Cerrar si clic fuera
+      document.addEventListener('click', (ev)=>{ if (!list.contains(ev.target) && ev.target !== input) hide(); });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+
+      POS CORE
+  ---------------------
+  Fecha: 12/8/2025, 10:14:20 p.m.
+  Cajero: Gabriela
+  ---------------------
+plancha x1 - $60.00
+  ---------------------
+  Subtotal: $60.00
+  Impuestos: $9.60
+  Total: $69.60
+  Pagado: $70.00
+  Cambio: $0.40
+  ---------------------
+  ¡Gracias por su compra!

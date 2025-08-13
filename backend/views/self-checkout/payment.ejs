@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>💳 Pago - Autocobro</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(to right, #f3efff, #e8ddf9);
+      font-family: 'Segoe UI', sans-serif;
+      padding-top: 40px;
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      background: rgba(255, 255, 255, 0.88);
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 0 25px rgba(116, 70, 182, 0.2);
+    }
+
+    h2 {
+      color: #4f3b8c;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      color: #4e2182;
+      font-weight: 500;
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 0.5rem;
+    }
+
+    .form-select:focus,
+    .form-control:focus {
+      border-color: #7446b6;
+      box-shadow: 0 0 0 0.2rem rgba(116, 70, 182, 0.25);
+    }
+
+    .btn {
+      border-radius: 2rem;
+      padding: 0.5rem 1.5rem;
+      font-weight: 500;
+    }
+
+    .btn-success {
+      background-color: #06d6a0;
+      border: none;
+    }
+
+    .btn-secondary {
+      background-color: #ced4da;
+      border: none;
+      color: #333;
+    }
+
+    .alert {
+      border-radius: 0.8rem;
+    }
+
+    #cambioInfo {
+      background-color: #dfe7ff;
+      border-left: 4px solid #4f3b8c;
+    }
+
+    #mensajeError {
+      background-color: #f8d7da;
+      border-left: 4px solid #dc3545;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 class="text-center">💳 Pago</h2>
+
+    <p><strong>Total a pagar:</strong> $<span id="totalMostrar"><%= total.toFixed(2) %></span></p>
+
+    <form id="formPago" action="/self-checkout/payment" method="POST">
+      <input type="hidden" id="totalOculto" value="<%= total.toFixed(2) %>">
+
+      <div class="mb-3">
+        <label class="form-label">Método de Pago:</label>
+        <select name="metodo" class="form-select" id="metodoPago" required>
+          <option value="">-- Selecciona --</option>
+          <option value="efectivo">💵 Efectivo</option>
+          <option value="tarjeta">💳 Tarjeta</option>
+          <option value="transferencia">🏦 Transferencia</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Monto recibido:</label>
+        <input type="number" name="monto" step="0.01" class="form-control" id="montoRecibido" required>
+      </div>
+
+      <div id="mensajeError" class="alert alert-danger d-none"></div>
+      <div id="cambioInfo" class="alert alert-info d-none mt-3"></div>
+
+      <div class="d-flex justify-content-between mt-4">
+        <a href="/self-checkout/cart" class="btn btn-secondary">⬅ Volver al carrito</a>
+        <button type="submit" class="btn btn-success">✅ Confirmar pago</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('formPago');
+    const metodoPago = document.getElementById('metodoPago');
+    const montoRecibido = document.getElementById('montoRecibido');
+    const total = parseFloat(document.getElementById('totalOculto').value);
+    const mensajeError = document.getElementById('mensajeError');
+    const cambioInfo = document.getElementById('cambioInfo');
+
+    metodoPago.addEventListener('change', () => {
+      const metodo = metodoPago.value;
+
+      if (metodo === 'tarjeta') {
+        montoRecibido.value = total.toFixed(2);
+        montoRecibido.readOnly = true;
+        cambioInfo.classList.add('d-none');
+      } else {
+        montoRecibido.value = '';
+        montoRecibido.readOnly = false;
+      }
+
+      mensajeError.classList.add('d-none');
+      mensajeError.textContent = '';
+    });
+
+    montoRecibido.addEventListener('input', () => {
+      const metodo = metodoPago.value;
+      const monto = parseFloat(montoRecibido.value);
+
+      cambioInfo.classList.add('d-none');
+      cambioInfo.textContent = '';
+
+      if ((metodo === 'efectivo' || metodo === 'transferencia') && !isNaN(monto) && monto >= total) {
+        const cambio = (monto - total).toFixed(2);
+        cambioInfo.textContent = `Cambio: $${cambio}`;
+        cambioInfo.classList.remove('d-none');
+      }
+    });
+
+    form.addEventListener('submit', function (e) {
+      const metodo = metodoPago.value;
+      const monto = parseFloat(montoRecibido.value);
+
+      mensajeError.classList.add('d-none');
+      mensajeError.textContent = '';
+
+      if (isNaN(monto)) {
+        mensajeError.textContent = '❌ Debes ingresar un monto válido.';
+        mensajeError.classList.remove('d-none');
+        e.preventDefault();
+        return;
+      }
+
+      if (metodo === 'tarjeta' && monto !== total) {
+        mensajeError.textContent = '❌ El pago con tarjeta debe ser exactamente igual al total.';
+        mensajeError.classList.remove('d-none');
+        e.preventDefault();
+      }
+
+      if ((metodo === 'efectivo' || metodo === 'transferencia') && monto < total) {
+        mensajeError.textContent = '❌ El monto debe ser igual o mayor al total para este método.';
+        mensajeError.classList.remove('d-none');
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #e8e4ff, #fdfbff);
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .card-metric {
+      border-radius: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(5px);
+      border-left: 6px solid #6C63FF;
+    }
+    .card-header { font-weight: bold; font-size: 1.1rem; }
+    h2 { color: #4e2182; font-weight: 700; }
+    .chart-container { display: flex; justify-content: center; align-items: center; padding: 20px; }
+    #metodoPagoChart { max-width: 300px; max-height: 300px; }
+    .table th, .table td { vertical-align: middle; }
+
+    /* Sección plegable */
+    .toggle-box {
+      border-radius: 1rem; overflow: hidden;
+      background: rgba(255,255,255,0.85);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .toggle-head {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; padding: .9rem 1rem;
+      background: linear-gradient(90deg, #7446b6, #8363d0);
+      color:#fff; cursor:pointer; user-select:none;
+    }
+    .toggle-body { padding: 1rem; background:#fff; }
+    .small-chart { height: 240px; }
+  </style>
+</head>
+<body>
+  <div class="container mt-4 mb-5">
+    <%- include('../partials/header', { currentUrl: '/dashboard', showBack: false, pendingCount }) %>
+
+    <h2 class="mb-4 text-center">📊 Dashboard General</h2>
+
+    <!-- Métricas resumen -->
+    <div class="row g-4 mb-4">
+      <div class="col-md-6">
+        <div class="card card-metric text-dark">
+          <div class="card-body">
+            <h5 class="card-title">🧾 Total de Ventas</h5>
+            <p class="fs-2 fw-bold m-0"><%= totalVentas %></p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card card-metric text-dark">
+          <div class="card-body">
+            <h5 class="card-title">💰 Ingresos Totales</h5>
+            <p class="fs-2 fw-bold m-0">$<%= Number(ingresosTotales||0).toFixed(2) %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla productos más vendidos -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-gradient text-white" style="background: #7446b6;">
+        🏆 Productos Más Vendidos
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover m-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Producto</th>
+              <th>Total Vendido</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!Array.isArray(productosMasVendidos) || productosMasVendidos.length === 0) { %>
+              <tr><td colspan="3" class="text-center text-muted">No hay ventas aún.</td></tr>
+            <% } else { %>
+              <% productosMasVendidos.forEach((p, i) => { %>
+                <tr>
+                  <td><%= i + 1 %></td>
+                  <td><%= p.nombre %></td>
+                  <td><%= p.totalVendido %></td>
+                </tr>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Gráfica de barras: Productos más vendidos -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-primary text-white">
+        📈 Gráfica: Productos Más Vendidos
+      </div>
+      <div class="card-body text-center" style="height: 250px;">
+        <canvas id="productosChart" style="max-height: 100%; max-width: 600px;"></canvas>
+      </div>
+    </div>
+
+    <!-- Gráfica de pastel: Métodos de pago -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-warning text-white">
+        🧾 Distribución por Método de Pago (últimos 30 días)
+      </div>
+      <div class="card-body chart-container">
+        <canvas id="metodoPagoChart"></canvas>
+      </div>
+    </div>
+
+    <!-- 🆕 Sección plegable: Análisis temporal -->
+    <div class="toggle-box mb-5">
+      <div class="toggle-head" data-bs-toggle="collapse" data-bs-target="#temporalBox" aria-expanded="false">
+        <span>⏱️ Análisis temporal (30 días / 2 semanas)</span>
+        <span class="small">mostrar/ocultar</span>
+      </div>
+      <div id="temporalBox" class="collapse">
+        <div class="toggle-body">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">📅 Ventas por día (últimos 30)</div>
+                <div class="card-body">
+                  <canvas id="dailyChart" class="small-chart"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">🕘 Ingresos por hora (acum. 2 semanas)</div>
+                <div class="card-body">
+                  <canvas id="hourlyChart" class="small-chart"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">📆 Ingresos por día de la semana</div>
+                <div class="card-body">
+                  <canvas id="dowChart" class="small-chart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div> <!-- row -->
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- container -->
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    // ====== Datos existentes ======
+    const labels = <%- JSON.stringify((productosMasVendidos||[]).map(p => p.nombre)) %>;
+    const data = <%- JSON.stringify((productosMasVendidos||[]).map(p => p.totalVendido)) %>;
+
+    const ctx = document.getElementById('productosChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Unidades Vendidas',
+          data,
+          backgroundColor: 'rgba(108, 99, 255, 0.6)',
+          borderColor: 'rgba(108, 99, 255, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    const metodoLabels = <%- JSON.stringify(Object.keys(metodosPago||{})) %>;
+    const metodoData = <%- JSON.stringify(Object.values(metodosPago||{})) %>;
+    const ctxPie = document.getElementById('metodoPagoChart').getContext('2d');
+    new Chart(ctxPie, {
+      type: 'pie',
+      data: {
+        labels: metodoLabels,
+        datasets: [{
+          label: 'Métodos de Pago',
+          data: metodoData,
+          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+          borderColor: '#ffffff', borderWidth: 1
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // ====== Nuevas series temporales ======
+    const seriesDaily = <%- JSON.stringify(seriesDaily || {labels:[], ingresos:[], ventas:[]}) %>;
+    const seriesHourly = <%- JSON.stringify(seriesHourly || {labels:[], ingresos:[], ventas:[]}) %>;
+    const seriesDOW = <%- JSON.stringify(seriesDOW || {labels:[], ingresos:[], ventas:[]}) %>;
+
+    // Ventas por día (línea doble: ingresos y #ventas, comparte eje)
+    const ctxDaily = document.getElementById('dailyChart').getContext('2d');
+    new Chart(ctxDaily, {
+      type: 'line',
+      data: {
+        labels: seriesDaily.labels,
+        datasets: [
+          {
+            label: 'Ingresos',
+            data: seriesDaily.ingresos,
+            borderColor: '#6C63FF',
+            backgroundColor: 'rgba(108,99,255,.15)',
+            tension: .25,
+            fill: true
+          },
+          {
+            label: 'Ventas',
+            data: seriesDaily.ventas,
+            borderColor: '#00B894',
+            backgroundColor: 'rgba(0,184,148,.15)',
+            tension: .25,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+
+    // Ingresos por hora (barras) – suele verse con forma “campana”
+    const ctxHourly = document.getElementById('hourlyChart').getContext('2d');
+    new Chart(ctxHourly, {
+      type: 'bar',
+      data: {
+        labels: seriesHourly.labels,
+        datasets: [{
+          label: 'Ingresos',
+          data: seriesHourly.ingresos,
+          backgroundColor: 'rgba(131,99,208,0.6)',
+          borderColor: '#8363d0',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    // Ingresos por día de la semana
+    const ctxDOW = document.getElementById('dowChart').getContext('2d');
+    new Chart(ctxDOW, {
+      type: 'bar',
+      data: {
+        labels: seriesDOW.labels,
+        datasets: [{
+          label: 'Ingresos',
+          data: seriesDOW.ingresos,
+          backgroundColor: 'rgba(116,70,182,0.6)',
+          borderColor: '#7446b6',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  </script>
+</body>
+</html>

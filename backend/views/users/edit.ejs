@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar Usuario</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --morado-oscuro: #3B2A66;
+      --morado-claro: #A47ED7;
+      --morado-medio: #6B2E84;
+      --lila-fondo: #f3ebff;
+    }
+
+    body {
+      background: linear-gradient(to right, var(--morado-claro), var(--morado-oscuro));
+      font-family: 'Segoe UI', sans-serif;
+      color: #2d2d2d;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+    }
+
+    .card-form {
+      background: rgb(190, 170, 208);
+      border-radius: 1rem;
+      padding: 2.5rem;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 950px;
+    }
+
+    h1 {
+      color: var(--morado-oscuro);
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-primary {
+      background-color: var(--morado-oscuro);
+      border-color: var(--morado-oscuro);
+      font-weight: bold;
+      border-radius: 2rem;
+    }
+
+    .btn-primary:hover {
+      background-color: #2a1f4e;
+      border-color: #2a1f4e;
+    }
+
+    .btn-secondary {
+      font-weight: bold;
+      border-radius: 2rem;
+    }
+
+    label {
+      font-weight: bold;
+      color: var(--morado-oscuro);
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    img {
+      border: 2px solid #eee;
+      border-radius: 8px;
+      max-width: 100px;
+    }
+
+    .alert {
+      border-radius: 0.75rem;
+      font-weight: 500;
+    }
+
+    .d-flex.justify-content-between {
+      gap: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card-form">
+    <div class="mb-4">
+      <%- include('../partials/header') %>
+    </div>
+
+    <h1>✏️ Editar Usuario</h1>
+
+    <% if (typeof error !== 'undefined') { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <form action="/users/edit/<%= user._id %>" method="POST" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label class="form-label">Nombre</label>
+        <input type="text" name="name" class="form-control" value="<%= user.name %>" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" name="email" class="form-control" value="<%= user.email %>" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Contraseña (deja en blanco si no quieres cambiarla)</label>
+        <input type="password" name="password" class="form-control" placeholder="Nueva contraseña">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Imagen actual</label><br>
+        <% if (user.image) { %>
+          <img src="/uploads/<%= user.image %>" alt="Imagen" class="mb-2 d-block">
+        <% } else { %>
+          <p class="text-muted">Sin imagen</p>
+        <% } %>
+        <input type="file" name="image" class="form-control" accept="image/*">
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Rol</label>
+        <select name="role" class="form-select" required>
+          <option value="administrador" <%= user.role === 'administrador' ? 'selected' : '' %>>Administrador</option>
+          <option value="cajero" <%= user.role === 'cajero' ? 'selected' : '' %>>Cajero</option>
+        </select>
+      </div>
+
+      <div class="d-flex justify-content-between">
+        <a href="/users" class="btn btn-secondary">⬅ Cancelar</a>
+        <button type="submit" class="btn btn-primary">💾 Actualizar</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

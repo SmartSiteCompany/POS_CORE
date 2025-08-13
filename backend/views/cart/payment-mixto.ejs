@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>💳 Pago Mixto</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background: linear-gradient(to right, #A47ED7, #3B2A66);
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pago-card {
+      background-color: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 1rem;
+      padding: 2rem 2.5rem;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    }
+
+    h2 {
+      color: #ffffff;
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      color: #f8f8f8;
+      font-weight: 600;
+    }
+
+    .form-control {
+      background-color: rgba(255, 255, 255, 0.8);
+      border: none;
+      border-radius: 0.5rem;
+    }
+
+    .btn-success {
+      background-color: #63d471;
+      border: none;
+    }
+
+    .btn-secondary {
+      background-color: #7446b6;
+      border: none;
+    }
+
+    .info-box {
+      background-color: rgba(255, 255, 255, 0.15);
+      padding: 1rem;
+      border-radius: 0.75rem;
+      color: #ffffff;
+      margin-bottom: 1rem;
+    }
+
+    .info-box strong {
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="pago-card">
+    <h2>💳 Pago Mixto</h2>
+    <p><strong>Total a pagar:</strong> $<span id="totalMostrar"><%= total.toFixed(2) %></span></p>
+
+    <form action="/cart/checkout" method="POST" id="formPago">
+      <input type="hidden" name="tipoPago" value="mixto">
+      <input type="hidden" name="total" id="totalOculto" value="<%= total.toFixed(2) %>">
+
+      <div class="mb-3">
+        <label for="montoEfectivo" class="form-label">Efectivo:</label>
+        <input type="number" step="0.01" name="montoEfectivo" id="montoEfectivo" class="form-control payment-input" value="0">
+      </div>
+
+      <div class="mb-3">
+        <label for="montoTarjeta" class="form-label">Tarjeta:</label>
+        <input type="number" step="0.01" name="montoTarjeta" id="montoTarjeta" class="form-control payment-input" value="0">
+      </div>
+
+      <div class="mb-3">
+        <label for="montoTransferencia" class="form-label">Transferencia:</label>
+        <input type="number" step="0.01" name="montoTransferencia" id="montoTransferencia" class="form-control payment-input" value="0">
+      </div>
+
+      <div class="info-box">
+        <strong>Total ingresado:</strong> $<span id="totalIngresado">0.00</span>
+        <strong>Cambio:</strong> $<span id="cambio">0.00</span>
+        <strong>Falta por pagar:</strong> $<span id="restante">0.00</span>
+      </div>
+
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-success" id="btnFinalizar">✅ Finalizar compra</button>
+        <a href="/cart/view" class="btn btn-secondary">⬅ Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const total = parseFloat(document.getElementById("totalOculto").value);
+    const inputs = document.querySelectorAll('.payment-input');
+    const totalIngresadoEl = document.getElementById('totalIngresado');
+    const cambioEl = document.getElementById('cambio');
+    const restanteEl = document.getElementById('restante');
+    const btnFinalizar = document.getElementById('btnFinalizar');
+
+    function calcular() {
+      let suma = 0;
+      const efectivo = parseFloat(document.getElementById('montoEfectivo').value) || 0;
+      let tarjeta = parseFloat(document.getElementById('montoTarjeta').value) || 0;
+      const transferencia = parseFloat(document.getElementById('montoTransferencia').value) || 0;
+
+      if (tarjeta > total) {
+        tarjeta = total;
+        document.getElementById('montoTarjeta').value = tarjeta.toFixed(2);
+      }
+
+      suma = efectivo + tarjeta + transferencia;
+      const cambio = suma > total ? (suma - total) : 0;
+      const restante = total - suma > 0 ? total - suma : 0;
+
+      totalIngresadoEl.textContent = suma.toFixed(2);
+      cambioEl.textContent = cambio.toFixed(2);
+      restanteEl.textContent = restante.toFixed(2);
+
+      btnFinalizar.disabled = restante > 0;
+    }
+
+    inputs.forEach(input => {
+      input.addEventListener("input", calcular);
+    });
+
+    calcular(); // inicial
+  </script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+body {
+  background-color: #FFFFFF;
+  color: #3B2A66;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+h1, h2, h3, h4 {
+  color: #4A226C;
+}
+
+.btn-primary {
+  background-color: #4A226C;
+  border-color: #4A226C;
+}
+
+.btn-primary:hover {
+  background-color: #6C4AA6;
+  border-color: #6C4AA6;
+}
+
+.btn-secondary {
+  background-color: #A47ED7;
+  border-color: #A47ED7;
+  color: white;
+}
+
+.btn-success {
+  background-color: #3B2A66;
+  border-color: #3B2A66;
+}
+
+.btn-success:hover {
+  background-color: #6C4AA6;
+  border-color: #6C4AA6;
+}
+
+.table thead {
+  background-color: #A47ED7;
+  color: white;
+}
+
+.table tbody tr:hover {
+  background-color: #F0E8FF;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 0 10px rgba(107, 79, 173, 0.2);
+}
+
+.navbar {
+  background-color: #3B2A66;
+}
+
+.navbar .navbar-brand, .navbar a {
+  color: white !important;
+}
+
+input.form-control, select.form-select {
+  border: 1px solid #A47ED7;
+}
+
+input.form-control:focus, select.form-select:focus {
+  border-color: #6C4AA6;
+  box-shadow: 0 0 0 0.2rem rgba(164, 126, 215, 0.25);
+}
+
